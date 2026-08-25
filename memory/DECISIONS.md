@@ -154,12 +154,38 @@ pick up cleanly after any interruption — committing them (rather than keeping 
 scratch dir) means they travel with the code, are reviewable in PRs, and let any session (this one
 resumed, or a fresh one) pick up with full context instead of re-deriving it.
 
-## Open spikes (to be resolved during implementation, logged here once settled)
+## Implementation-time findings (risks noted, not blocking)
 
-- **TS global `Temporal` typing** (Milestone 0): does the installed TypeScript version's bundled
-  `lib` already ship ambient `Temporal` global types, or does this package need to ship its own
-  ambient `.d.ts` (sourced from `temporal-polyfill`'s types) so consumer apps get `Temporal.*`
-  type-checking without installing `temporal-polyfill`'s types themselves? — **UNRESOLVED**
+### Peer-range lag on bleeding-edge majors (Milestone 0)
+**Finding:** `pnpm peers check` flags two unmet peer ranges after installing latest-tagged
+packages: `eslint-plugin-react@7.37.5` declares a peer range of `^3 || ^4 || ^5 || ^6 || ^7 || ^8
+|| ^9.7` (doesn't yet list ESLint 10 even though ESLint 10.9.1 is installed), and
+`typescript-eslint@8.68.0`'s packages declare `typescript >=4.8.4 <6.1.0` (doesn't yet list
+TypeScript 7 even though 7.0.2 is installed). Both are cases of plugin maintainers' declared
+`peerDependencies` metadata lagging behind genuinely-latest major releases of the tools they
+plug into — pnpm only warns (doesn't block install) on this.
+**Decision:** Proceed with the installed latest versions as-is rather than downgrading ESLint/TS
+to satisfy stale peer metadata — re-verify at the point ESLint config is actually authored and run
+(Milestone 6) whether the plugins function correctly in practice despite the metadata gap; if
+`eslint-plugin-react`/`typescript-eslint` genuinely fail against ESLint 10/TS 7 at that point (not
+just a stale peer range warning), that's when to reconsider, not now.
+
+## Resolved implementation-time spikes
+
+### TS global `Temporal` typing — RESOLVED (Milestone 0)
+**Finding:** TypeScript 7.0.2's bundled `ESNext` lib already ships ambient `Temporal` global
+types natively — confirmed by a spike file referencing `Temporal.PlainDate.from(...)` with no
+import, which type-checked clean under `lib: ["ESNext", "DOM", "DOM.Iterable"]`, then correctly
+flagged a deliberately-wrong assignment (`Temporal.PlainDate` ← `string`) once introduced,
+confirming tsc was genuinely checking the file and not silently skipping it.
+**Consequence:** This package does **not** need to ship its own ambient `.d.ts` declaring the
+`Temporal` global — `temporal-polyfill`'s own types aren't needed for this either, since we never
+import it as a value in consumer-facing type positions (see decision 3). The only caveat: a
+consumer needs a TypeScript version whose bundled lib includes these types for `Temporal.*` to
+type-check in their own app code — worth a one-line callout in the README/docs (not a blocker, and
+not something this package can control), but not an open item for us to build.
+
+## Open spikes (to be resolved during implementation, logged here once settled)
 - **`getInvalidDate()` sentinel design** (Milestone 3): Temporal has no first-class "invalid" value
   (unlike Luxon's `DateTime.invalid(...)`) — need a concrete fixed sentinel value plus a
   try/catch-based `isValid()`. — **UNRESOLVED**

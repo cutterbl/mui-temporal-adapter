@@ -6,11 +6,11 @@ step is actually completed and verified — this file is always meant to be an a
 
 ## Milestone 0 — Scaffold
 - [x] Create `./memory/{PLAN.md,DECISIONS.md,PROGRESS.md}`
-- [ ] `git init`, initial `.gitignore`
-- [ ] `pnpm init` — base `package.json` (name, type: module, `packageManager` pinned, private until ready)
-- [ ] Install latest-major dependencies via pnpm (verify each via `pnpm view <pkg> version`)
-- [ ] `tsconfig.json`
-- [ ] Resolve global `Temporal` typing spike (tsc sees the global type cleanly) — log resolution in `DECISIONS.md`
+- [x] `git init`, initial `.gitignore`, remote `origin` → github.com/cutterbl/mui-temporal-adapter, initial commit pushed to `main`, work continuing on branch `feat/initial-implementation`
+- [x] `pnpm init` — base `package.json` (name `@cxing/mui-temporal-adapter`, type: module, `packageManager` pinned to pnpm@11.9.0, ESM-only `exports` map scaffolded, scripts stubbed)
+- [x] Install latest-major dependencies via pnpm — all resolved to the exact versions researched in planning (React 19.2.8, MUI X 9.12.0, MUI Material 9.3.1, TS 7.0.2, Vite 8.2.2, Vitest 4.1.11, ESLint 10.9.1, Storybook 10.5.10, temporal-polyfill 1.0.4, etc.); `peerDependencies` block added for react/react-dom/@mui/material/@mui/x-date-pickers; esbuild's postinstall build script approved via `pnpm approve-builds`; peer-range lag on eslint-plugin-react/typescript-eslint noted in `DECISIONS.md` (not blocking, re-check at Milestone 6)
+- [x] `tsconfig.json`
+- [x] Resolve global `Temporal` typing spike — **resolved**: TS 7.0.2's bundled `ESNext` lib already ships ambient `Temporal` global types natively, no ambient `.d.ts` needed from this package; logged in `DECISIONS.md`
 
 ## Milestone 1 — Feature-detection / lazy-load modules
 - [ ] `src/temporal-runtime/ensureTemporal.ts` + `getTemporal.ts`
