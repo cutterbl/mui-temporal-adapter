@@ -291,6 +291,66 @@ remains genuinely deferred — it needs the `component` Vitest project (jsdom + 
 which isn't wired until Milestone 5 — but `PROGRESS.md`'s Milestone 4 checklist now explicitly notes
 it needs to exist before that milestone's build-entry wiring can reference it.
 
+### `any` banned outright — enforce via ESLint, not just `strict` (flagged Milestone 2, applies Milestone 6)
+**Decision:** No TypeScript file in this package may use `any` — implicit or explicit. `tsc`'s
+`strict: true` already catches *implicit* `any` (`noImplicitAny`), and a repo-wide check
+(`grep -rn '\bany\b' src test`) at the time this was raised found zero actual type-position uses
+(only prose hits in comments/JSDoc, e.g. "any subset of the default formats"). But `strict` alone
+does **not** catch a deliberately-written `x: any` or `as any` — that requires
+`@typescript-eslint/no-explicit-any` set to `"error"` explicitly in `eslint.config.js` (its
+severity under the `recommended`/`recommendedTypeChecked` presets isn't reliable enough on its own
+to depend on).
+**Why:** User's explicit direction — "TS should never use `any`. Should be enforced, if possible."
+**How to apply:** When authoring `eslint.config.js` in Milestone 6, explicitly set
+`'@typescript-eslint/no-explicit-any': 'error'` (don't just inherit whatever the preset defaults
+to), and re-run the same `grep -rn '\bany\b' src test` sanity check once the whole method inventory
+(Milestones 3–5) exists, to confirm nothing crept in before the linter was there to catch it. Add
+this as an explicit Milestone 6 checklist line in `PROGRESS.md` (done) so it isn't lost between now
+and then.
+
+### Hand-rolled format/parse token engine: `D`/`DD`/`T` macros expand via `Intl`, formatted through the same token pipeline, not raw `toLocaleString()` (Milestone 3)
+**Decision:** `src/format/{tokenizeFormat,formatByToken,parseByToken,expandFormat,fieldTokens}.ts`
+implement the Luxon-style token vocabulary from `defaults.ts`'s `formatTokenMap`, plus three
+locale macros (`D`, `DD`, `T`) used by several of `defaultFormats` (`keyboardDate`, `fullDate`,
+`keyboardDateTime24h`/`12h`). `AdapterTemporal.formatByString`/`parse`/`expandFormat` now delegate
+to this engine instead of throwing; `parse()` calls `expandFormat()` internally first so macro
+tokens are parseable too, and — having no `timezone` parameter of its own — builds its result in
+the runtime's current zone (`resolveZone('system')`), matching how other adapters fall back to
+their library's default zone here.
+**Why:** Temporal has no format-string engine of its own (unlike Luxon/dayjs/moment) — this is
+genuinely new surface, not something to delegate to `Temporal.ZonedDateTime.toLocaleString()`
+alone, since MUI X's keyboard-editable fields need each token to correspond to one
+independently-editable section, which a single opaque locale string can't provide.
+**Two real bugs found and fixed via an end-to-end smoke test** (not committed; the usual pattern
+for this project — see the Milestone 1/2 `ensureTemporal` entries above):
+1. **Macro-token digit padding vs. field-token expansion could disagree.** The first
+   `expandMacroToken()` draft hardcoded unpadded tokens (`'d'`, `'M'`, `'H'`) for the `D`/`DD`/`T`
+   macros' numeric fields, but `formatByToken()`'s own `'D'`/`'DD'`/`'T'` cases delegated straight
+   to `value.toLocaleString()` — and some locales' `numeric` style *is* zero-padded by CLDR
+   convention (confirmed via `fr-FR`: `format(value, 'keyboardDate')` produced `"05/03/2024"`, but
+   `expandFormat('D')` produced the unpadded `"d/M/yyyy"` — meaning a `DateField` rendering
+   per-section from the expanded tokens would show unpadded digits while `format()` elsewhere on
+   the same named format showed padded ones). **Fix:** `partsToFormat()` now detects padding by
+   reading the actual rendered digit length at a reference date deliberately chosen to be
+   unambiguous (day 1, month January, hour 1 — each naturally single-digit unless the locale pads),
+   rather than assuming a fixed token per field.
+2. **Macro tokens rendered in the locale's native numbering system, breaking round-trip parsing.**
+   `formatByToken()`'s original `'D'`/`'DD'`/`'T'` cases called `value.toLocaleString()` directly,
+   which for locales like `ar-SA` renders Arabic-Indic digits (e.g. `"٥‏/٣‏/٢٠٢٤"`) — but every other
+   digit token in this engine deliberately stays plain ASCII (`parseByToken()`'s digit matching is
+   ASCII-only `\d`, and MUI's own extension point for alternate numbering systems is
+   `AdapterTemporal.formatNumber()`, called by MUI's field-rendering layer itself, not by this
+   engine). **Fix:** `formatByToken()`'s `D`/`DD`/`T` cases now expand the macro via
+   `expandMacroToken()` (exported from `expandFormat.ts` for this reuse) and format the resulting
+   token sequence through `formatByToken()` itself, recursively — same technique used to catch
+   fix #1, now also guaranteeing ASCII digit output. This required moving `SUPPORTED_FIELD_TOKENS`
+   out of `formatByToken.ts` into its own `fieldTokens.ts` module, to avoid a circular import
+   (`formatByToken.ts` needing `expandFormat.ts` needing `formatByToken.ts`).
+**Verification:** smoke-tested round-trip format→parse across `en-US`, `fr-FR`, `ja-JP` (CJK
+names), and `ar-SA` (RTL + native numerals) — including every default named format, the `D`
+expansion/format/parse triple, `yy` 2-digit-year windowing, and a literal-quoted-text format —
+before deleting the throwaway test file. `tsc --noEmit` and `vitest run --project unit` both clean.
+
 ## Implementation-time findings (risks noted, not blocking)
 
 ### Peer-range lag on bleeding-edge majors (Milestone 0)

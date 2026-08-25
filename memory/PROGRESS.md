@@ -51,12 +51,26 @@ step is actually completed and verified — this file is always meant to be an a
       passing); `tsc --noEmit` and `vitest run --project unit` both clean (4 files, 8 tests)
 
 ## Milestone 3 — Format/parse token engine
-- [ ] `src/format/tokenizeFormat.ts`
-- [ ] `src/format/formatByToken.ts` (+ `Intl.DateTimeFormat` delegation for locale names)
-- [ ] `src/format/parseByToken.ts`
-- [ ] Wire into `AdapterTemporal.format`/`formatByString`/`parse`/`expandFormat`
-- [ ] Resolve `getInvalidDate()` sentinel design — log resolution in `DECISIONS.md`
-- [ ] JSDoc continues alongside
+- [x] `src/format/tokenizeFormat.ts` — literal/token lexer (quoted-literal handling,
+      `''` escape), locale-independent
+- [x] `src/format/fieldTokens.ts` — shared `SUPPORTED_FIELD_TOKENS` set, split out from
+      `formatByToken.ts` to avoid a circular import once macro-token formatting needed
+      `expandFormat.ts`; not originally itemized, see `DECISIONS.md`
+- [x] `src/format/formatByToken.ts` (+ `Intl`/`toLocaleString()` delegation for locale
+      names — month/weekday names, meridiem)
+- [x] `src/format/expandFormat.ts` — `D`/`DD`/`T` locale-macro expansion + stray-word
+      auto-quoting; not originally itemized as its own file, see `DECISIONS.md`
+- [x] `src/format/parseByToken.ts`
+- [x] Wire into `AdapterTemporal.format`/`formatByString`/`parse`/`expandFormat`
+- [x] `getInvalidDate()` sentinel design — already resolved in Milestone 2, not
+      actually pending here after all
+- [x] JSDoc continues alongside
+- [x] Two real bugs found & fixed via an end-to-end smoke test (not committed): macro
+      tokens' digit padding could disagree between `format()` and `expandFormat()`
+      output; macro tokens rendered in the locale's native numbering system (e.g.
+      Arabic-Indic for `ar-SA`), breaking round-trip parsing. Both fixed, verified
+      across `en-US`/`fr-FR`/`ja-JP`/`ar-SA`; see `DECISIONS.md`. `tsc --noEmit` and
+      `vitest run --project unit` both clean (4 files, 8 tests)
 
 ## Milestone 4 — Vite multi-entry library build
 - [ ] Author `src/TemporalLocalizationProvider/TemporalLocalizationProvider.tsx` (`use()` +
@@ -80,7 +94,9 @@ step is actually completed and verified — this file is always meant to be an a
 - [ ] Coverage thresholds (85% branch / 90% function) met on `unit`+`component` projects
 
 ## Milestone 6 — Lint/format
-- [ ] `eslint.config.js` authored (no jsx-a11y)
+- [ ] `eslint.config.js` authored (no jsx-a11y); explicitly set
+      `'@typescript-eslint/no-explicit-any': 'error'` (don't rely on preset defaults) — user
+      directive, `any` must never be used, enforced not just conventional; see `DECISIONS.md`
 - [ ] `.prettierrc.json` / `.prettierignore` authored
 - [ ] `pnpm lint` clean across `src/`, `test/`, `stories/`
 - [ ] `pnpm format -- --check` clean

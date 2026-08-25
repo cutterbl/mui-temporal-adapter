@@ -9,6 +9,10 @@ import { getTemporal } from '../temporal-runtime/getTemporal';
 import { getFirstDayOfWeek } from '../week-info/getFirstDayOfWeek';
 import { createInvalidDate, isValidZonedDateTime } from '../utils/invalid';
 import { resolveZone } from '../utils/timezone';
+import { expandFormat as expandFormatImpl } from '../format/expandFormat';
+import { formatByToken } from '../format/formatByToken';
+import { parseByToken } from '../format/parseByToken';
+import { tokenizeFormat } from '../format/tokenizeFormat';
 import { defaultFormats, formatTokenMap } from './defaults';
 import type { AdapterTemporalOptions } from './AdapterTemporal.types';
 
@@ -179,8 +183,9 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
   public formatNumber = (numberToFormat: string): string => numberToFormat;
 
   // ---------------------------------------------------------------------------------
-  // Format / parse — implemented in a later milestone (Temporal has no built-in
-  // format-string engine of its own; see `src/format/`).
+  // Format / parse — Temporal has no built-in format-string engine of its own, so
+  // this delegates to the hand-rolled one in `src/format/` (Luxon-style tokens; see
+  // `defaults.ts`'s `formatTokenMap` for the vocabulary).
   // ---------------------------------------------------------------------------------
 
   /**
@@ -194,33 +199,47 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
   };
 
   /**
-   * Formats a date using a raw format string.
-   * @param _value - The date to format.
-   * @param _formatString - The format string to use.
+   * Formats a date using a raw format string (Luxon-style tokens, e.g.
+   * `'yyyy-MM-dd'`) — every token in `formatTokenMap`, plus the locale-macro tokens
+   * `D`/`DD`/`T` used by several of this adapter's own `defaultFormats`.
+   * @param value - The date to format.
+   * @param formatString - The format string to use.
    * @returns The formatted date string.
    */
-  public formatByString = (_value: Temporal.ZonedDateTime, _formatString: string): string => {
-    throw new Error('[AdapterTemporal] formatByString() is not implemented yet — coming in a later milestone.');
+  public formatByString = (value: Temporal.ZonedDateTime, formatString: string): string => {
+    return tokenizeFormat(formatString)
+      .map((tok) => (tok.literal ? tok.value : formatByToken(value, tok.value, this.locale)))
+      .join('');
   };
 
   /**
-   * Parses a string date in a specific format.
-   * @param _value - The string date to parse.
-   * @param _formatString - The format the string date is in.
+   * Parses a string date in a specific format (see `formatByString()` for the token
+   * vocabulary; `D`/`DD`/`T` macros are also accepted here, expanded via
+   * `expandFormat()` first). Since `parse()` has no `timezone` parameter of its own,
+   * the result is built in the runtime's own current time zone — matching how other
+   * MUI X adapters fall back to their library's default zone here.
+   * @param value - The string date to parse.
+   * @param formatString - The format the string date is in.
    * @returns The parsed date, or `null` if parsing fails.
    */
-  public parse = (_value: string, _formatString: string): Temporal.ZonedDateTime | null => {
-    throw new Error('[AdapterTemporal] parse() is not implemented yet — coming in a later milestone.');
+  public parse = (value: string, formatString: string): Temporal.ZonedDateTime | null => {
+    if (value === '') {
+      return null;
+    }
+    return parseByToken(value, this.expandFormat(formatString), this.locale, resolveZone('system'));
   };
 
   /**
-   * Expands a format with no meta-tokens into one with only literal tokens.
-   * @param _format - The format to expand.
+   * Expands a format string with no meta-tokens (this adapter's own `D`/`DD`/`T`
+   * locale macros) into one with only literal and field tokens — the form
+   * `formatByString()`/`parse()` operate on directly. MUI X's keyboard-editable
+   * fields (`DateField`, `TimeField`, …) call this before splitting a format into
+   * per-section tokens, so every default format built from a macro (`keyboardDate`,
+   * `fullDate`, …) still renders one editable section per field.
+   * @param format - The format to expand.
    * @returns The expanded format.
    */
-  public expandFormat = (_format: string): string => {
-    throw new Error('[AdapterTemporal] expandFormat() is not implemented yet — coming in a later milestone.');
-  };
+  public expandFormat = (format: string): string => expandFormatImpl(format, this.locale);
 
   // ---------------------------------------------------------------------------------
   // Validity
