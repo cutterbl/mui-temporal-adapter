@@ -154,6 +154,33 @@ pick up cleanly after any interruption — committing them (rather than keeping 
 scratch dir) means they travel with the code, are reviewable in PRs, and let any session (this one
 resumed, or a fresh one) pick up with full context instead of re-deriving it.
 
+## Implementation-time decisions
+
+### `package.json` `exports` map: generic `"./*"` pattern, not one entry per module
+**Decision:** Replace the originally-planned hand-enumerated `exports` map (one explicit subpath
+key per public module — `./createTemporalAdapter`, `./AdapterTemporal`,
+`./TemporalLocalizationProvider`) with a single generic pattern:
+```json
+"exports": {
+  ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+  "./*": { "types": "./dist/*.d.ts", "import": "./dist/*.js" },
+  "./package.json": "./package.json"
+}
+```
+**Why:** User's explicit direction — the list of public modules will grow, and hand-enumerating
+every subpath in `package.json` means remembering to edit two places (the `exports` map and
+`vite.config.ts`'s `build.lib.entry` map) every time one is added, which drifts out of sync
+easily. The `"./*"` pattern maps any subpath directly to the matching flat `dist/` output file
+(both Node's and TypeScript's `exports`-field resolution support `*` pattern trailers in both the
+key and the value), so the **only** place that needs an edit when a new public module is added is
+`vite.config.ts`'s entry map — the export becomes available automatically the moment the build
+emits that file. No functional change to any subpath already documented in this plan
+(`@cxing/mui-temporal-adapter/createTemporalAdapter` etc. still resolve exactly the same way); this
+only changes how the mapping is expressed, not what resolves.
+**Consequence:** `vite.config.ts`'s `build.lib.entry` map is now the single source of truth for
+"what is a public module" — worth calling out clearly in a code comment there when Milestone 4
+authors it, since it's easy to forget that adding an entry there is now sufficient on its own.
+
 ## Implementation-time findings (risks noted, not blocking)
 
 ### Peer-range lag on bleeding-edge majors (Milestone 0)

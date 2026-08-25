@@ -17,17 +17,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./createTemporalAdapter": {
-      "types": "./dist/createTemporalAdapter.d.ts",
-      "import": "./dist/createTemporalAdapter.js"
-    },
-    "./AdapterTemporal": {
-      "types": "./dist/AdapterTemporal.d.ts",
-      "import": "./dist/AdapterTemporal.js"
-    },
-    "./TemporalLocalizationProvider": {
-      "types": "./dist/TemporalLocalizationProvider.d.ts",
-      "import": "./dist/TemporalLocalizationProvider.js"
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     },
     "./package.json": "./package.json"
   },
