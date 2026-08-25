@@ -38,6 +38,25 @@ describe('week-info — no native getWeekInfo support', () => {
     // ensureWeekInfo() was never called in this fresh module instance.
     expect(getFirstDayOfWeek('en-US')).toBe(1);
   });
+
+  it('a locale tag whose maximize() yields no region still resolves the safe default', async () => {
+    const { ensureWeekInfo } = await import('../../src/week-info/ensureWeekInfo');
+    const { getFirstDayOfWeek } = await import('../../src/week-info/getFirstDayOfWeek');
+    await ensureWeekInfo();
+
+    // 'zxx' ("no linguistic content", ISO 639-2) has no likely-subtag region to fill in.
+    expect(new Intl.Locale('zxx').maximize().region).toBeUndefined();
+    expect(getFirstDayOfWeek('zxx')).toBe(1);
+  });
+
+  it('a second ensureWeekInfo() call is a cheap no-op once the table is already loaded', async () => {
+    const { ensureWeekInfo } = await import('../../src/week-info/ensureWeekInfo');
+    const { getFirstDayOfWeek } = await import('../../src/week-info/getFirstDayOfWeek');
+
+    await ensureWeekInfo();
+    await ensureWeekInfo(); // exercises the already-loaded early-return path
+    expect(getFirstDayOfWeek('en-US')).toBe(7);
+  });
 });
 
 describe('week-info — forced fallback even with native support present', () => {

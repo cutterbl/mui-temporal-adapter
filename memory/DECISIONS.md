@@ -436,6 +436,57 @@ so nothing in that module needs to import from `firstDayOfWeekTable.ts` at all. 
 the warning is gone, and `firstDayOfWeekTable-*.js` now appears as its own separate chunk in
 `dist/`, distinct from the four entry chunks.
 
+### Real bug found — `expandFormat()` could corrupt literal text at a quoted-run boundary (Milestone 5)
+**Finding:** Writing the `component`/`unit` test suite (specifically a test round-tripping a stray
+unrecognized word like `"foo HH:mm"` through `expandFormat()`) surfaced a real bug: `expandFormat()`
+previously called `quoteLiteral()` independently on each literal/unrecognized-word *token*
+(one `tokenizeFormat()` piece at a time) rather than on a merged run of adjacent ones. Two
+different-letter unrecognized runs landing back-to-back (e.g. `"f"` then `"oo"` from `"foo"`) each
+got their own `'...'` wrapping, so the joined output put a closing `'` immediately next to the next
+piece's opening `'` (`"'f''oo'"`). A later `tokenizeFormat()` pass over that *same* string (as
+`parse()` does) reads adjacent `''` as the escaped-apostrophe sequence, not as two separate quoted
+runs — collapsing `"foo"` into the corrupted `"f'oo"`. Reachable any time a custom/expanded format
+string contains two consecutive words built only from letters this adapter doesn't recognize as
+tokens.
+**Fix:** Rewrote `expandFormat()` (`src/format/expandFormat.ts`) to buffer consecutive literal/
+unrecognized-token text into one running string and call `quoteLiteral()` on it once per contiguous
+run, flushing only when a real field token or macro token is reached — so two adjacent unrecognized
+words are quoted together as a single span, never producing back-to-back quote marks. Verified via
+the regression test plus the full suite staying green.
+
+### Testing-environment gotcha — React 19 `use()` + `<Suspense>` needs `await act()` around the initial `render()` in RTL/jsdom (Milestone 5)
+**Finding:** `TemporalLocalizationProvider`'s tests (any component that suspends via `use()` on its
+very first render) hung indefinitely — `screen.findByRole(...)` timed out with the fallback still
+showing, and React logged "A component suspended inside an `act` scope, but the `act` call was not
+awaited." Isolated with a throwaway probe component reduced to `use(Promise.resolve('hello'))`: even
+a promise that's *already resolved* by the time `render()` returns never triggered a re-render once
+the fallback returned first. Not specific to this project's code — a general React 19 + `use()` +
+`@testing-library/react` + jsdom interaction: React's own async re-render (once the suspended
+promise settles) needs to happen inside a tracked `act()` call, and a bare `render()` outside one
+doesn't provide that for a synchronously-first-suspending tree.
+**Fix:** No source change — this only affects test code. Every test that renders a component
+suspending via `use()` on mount wraps that initial `render()` call in
+`await act(async () => { render(...) })` (`@testing-library/react`'s own `act`), which reliably
+flushes the resolution. Documented inline in `test/components/TemporalLocalizationProvider*.test.tsx`
+so a future test author reaching for `use()`-based Suspense elsewhere doesn't have to rediscover
+this the same way.
+
+### Coverage thresholds met (Milestone 5)
+**Result:** `pnpm test:coverage` (`vitest run --project unit --project component --coverage`)
+passes the plan's stated 85%-branch/90%-function gate with real margin: 88.19% branches, 100%
+functions, 96.74% statements, 99.11% lines, across `src/**/*.{ts,tsx}`. `test/adapter/*.test.ts`
+(pure `AdapterTemporal` method coverage, mirroring `AdapterLuxon`'s own method inventory),
+`test/components/*.test.tsx` (real `LocalizationProvider` + MUI X pickers + `AdapterTemporal`, incl.
+calendar-grid week-start ordering verified both natively and under `forceWeekInfoFallback`), plus
+targeted additions to close specific branch gaps (`createTemporalAdapter`'s factory-level default
+locale layering, `getTemporal()`'s not-yet-available throw, `ensureWeekInfo()`'s already-loaded
+early return, `getFirstDayOfWeek()`'s no-resolvable-region fallback, and every remaining
+`formatByToken`/`parseByToken` token case). A handful of `tokenizeFormat.ts`'s `?? ''`
+null-coalescing branches (added defensively to satisfy `noUncheckedIndexedAccess`, not because the
+index can actually be out of range at those call sites) are provably unreachable at runtime and
+stay uncovered — accepted as-is rather than restructuring working code to chase literal 100%; they
+don't block the aggregate threshold.
+
 ## Open spikes (to be resolved during implementation, logged here once settled)
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC
   trusted-publishing flow now supports establishing trust before a package's first publish, or

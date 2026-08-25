@@ -136,18 +136,41 @@ function partsToFormat(
  * ```
  */
 export function expandFormat(format: string, locale: string): string {
-  return tokenizeFormat(format)
-    .map((tok) => {
-      if (tok.literal) {
-        return quoteLiteral(tok.value);
-      }
-      if ((MACRO_TOKENS as readonly string[]).includes(tok.value)) {
-        return expandMacroToken(tok.value as MacroToken, locale);
-      }
-      if (SUPPORTED_FIELD_TOKENS.has(tok.value)) {
-        return tok.value;
-      }
-      return quoteLiteral(tok.value);
-    })
-    .join('');
+  const pieces: string[] = [];
+  // Explicit literal text and stray unrecognized-word tokens are both buffered here and
+  // quoted together as *one* run, rather than each `quoteLiteral()`-wrapped independently —
+  // two separately-quoted runs landing back-to-back in the output (e.g. two different-letter
+  // unrecognized words in a row, like "foo") would otherwise put a `'` immediately next to
+  // another `'` in the joined string, which `tokenizeFormat()` reads back as the `''`
+  // escaped-apostrophe sequence on a later pass, corrupting the literal text. Buffering and
+  // quoting once per contiguous run sidesteps the collision entirely.
+  let literalBuffer = '';
+
+  const flushLiteral = () => {
+    if (literalBuffer !== '') {
+      pieces.push(quoteLiteral(literalBuffer));
+      literalBuffer = '';
+    }
+  };
+
+  for (const tok of tokenizeFormat(format)) {
+    if (tok.literal) {
+      literalBuffer += tok.value;
+      continue;
+    }
+    if ((MACRO_TOKENS as readonly string[]).includes(tok.value)) {
+      flushLiteral();
+      pieces.push(expandMacroToken(tok.value as MacroToken, locale));
+      continue;
+    }
+    if (SUPPORTED_FIELD_TOKENS.has(tok.value)) {
+      flushLiteral();
+      pieces.push(tok.value);
+      continue;
+    }
+    literalBuffer += tok.value;
+  }
+  flushLiteral();
+
+  return pieces.join('');
 }

@@ -102,14 +102,43 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] Verified `es2024` target in emitted output (no TS downlevel helpers present in any built chunk)
 
 ## Milestone 5 — Full Vitest suite
-- [ ] `test/adapter/getters-setters.test.ts`
-- [ ] `test/adapter/arithmetic.test.ts`
-- [ ] `test/adapter/comparisons.test.ts`
-- [ ] `test/adapter/formatting.test.ts`
-- [ ] `test/adapter/week.test.ts`
-- [ ] `test/adapter/timezone.test.ts`
-- [ ] `test/components/*.test.tsx` (Testing Library, real pickers + `AdapterTemporal`, incl. calendar-grid ordering under `forceWeekInfoFallback`)
-- [ ] Coverage thresholds (85% branch / 90% function) met on `unit`+`component` projects
+- [x] `test/adapter/getters-setters.test.ts` — getters, per-field setters, `setMonth`/`setYear`/
+      `setDate` overflow-constrain edge cases (Jan 31 → Feb 29/28, Feb 29 → non-leap year)
+- [x] `test/adapter/arithmetic.test.ts` — `addYears`…`addSeconds`, negative amounts,
+      `addMonths`/`addYears` constrain behavior
+- [x] `test/adapter/comparisons.test.ts` — `isEqual`, `isSame*`, `isAfter*`/`isBefore*`,
+      `isWithinRange`; a dedicated test proves `isSameDay` projects `comparing` into the
+      *reference* date's own timezone (Tokyo, fixed +09:00, no DST) rather than its own
+- [x] `test/adapter/formatting.test.ts` — every `format`/`formatByString`/`parse`/`expandFormat`
+      token (digit, name, macro), `formats` overrides, literal-quoting incl. an unterminated
+      quote and a standalone `''`, malformed-input null cases, 12-hour AM/PM boundary math,
+      `yy` century resolution, unsupported-token throw
+- [x] `test/adapter/week.test.ts` — `startOfWeek`/`endOfWeek`/boundaries, `getDaysInMonth`,
+      `getWeekNumber`, `getDayOfWeek`, `getWeekArray` (full-grid shape + locale-correct first
+      column, en-US Sunday-first vs. fr-FR Monday-first), `getYearRange`
+- [x] `test/adapter/timezone.test.ts` — `date()`'s instant/wall-clock/invalid branches,
+      `getTimezone`/`setTimezone`, `toJsDate`, `getInvalidDate`/`isValid`, `getCurrentLocaleCode`
+- [x] `test/createTemporalAdapter.test.ts` + `test/temporal-runtime/getTemporal.test.ts` — not
+      originally itemized; added to close real coverage gaps (factory-level default-locale
+      layering, `getTemporal()`'s not-yet-available throw); see `DECISIONS.md`
+- [x] `test/components/*.test.tsx` (Testing Library, real `LocalizationProvider` + MUI X pickers
+      + `AdapterTemporal`, jsdom): `DateCalendar` (locale-aware week-start ordering, both native
+      and `forceWeekInfoFallback`), `DatePicker`/`TimePicker`/`DateTimePicker` (field rendering,
+      keyboard interaction + `onChange`, timezone-awareness), `TemporalLocalizationProvider`
+      (`use()`/`<Suspense>` resolution, `forcePolyfill`, `forceWeekInfoFallback`) — `vitest.config.ts`
+      gained the `component` project (jsdom + `@vitejs/plugin-react`) and `test/setup.ts`
+      (`@testing-library/jest-dom/vitest`) to support this, per `PLAN.md`
+- [x] Real bug found & fixed via this suite: `expandFormat()` could corrupt literal text at a
+      quoted-run boundary; see `DECISIONS.md`
+- [x] Testing-environment gotcha found & documented (no source change): React 19 `use()` +
+      `<Suspense>` needs the initial `render()` wrapped in `await act(async () => ...)` in this
+      RTL/jsdom setup, or the suspended tree never re-renders; see `DECISIONS.md`
+- [x] Coverage thresholds (85% branch / 90% function) met on `unit`+`component` projects —
+      88.19% branches / 100% functions / 96.74% statements / 99.11% lines (`@vitest/coverage-v8`
+      added as a devDependency); see `DECISIONS.md` for the one small class of provably-
+      unreachable branches left uncovered
+- [x] `tsc --noEmit`, `pnpm test` (`vitest run --project unit --project component`) both clean:
+      18 test files, 93 tests passing
 
 ## Milestone 6 — Lint/format
 - [ ] `eslint.config.js` authored (no jsx-a11y); explicitly set
