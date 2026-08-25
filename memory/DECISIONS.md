@@ -382,11 +382,61 @@ consumer needs a TypeScript version whose bundled lib includes these types for `
 type-check in their own app code — worth a one-line callout in the README/docs (not a blocker, and
 not something this package can control), but not an open item for us to build.
 
+### `vite-plugin-dts` multi-entry `.d.ts` emission shape — RESOLVED (Milestone 4)
+**Finding:** `vite-plugin-dts@5.0.3` is now a thin wrapper around `unplugin-dts`, whose default
+(non-bundled) mode emits each processed file's declarations at a path mirroring `src/`'s own
+directory structure, relative to `entryRoot` (defaulting to the smallest common root of all
+processed files — `src/` here). The four build entries as originally pointed at in `vite.config.ts`
+were `src/index.ts`, `src/createTemporalAdapter.ts` (already flat) but `src/AdapterTemporal/AdapterTemporal.ts`
+and `src/TemporalLocalizationProvider/TemporalLocalizationProvider.tsx` (nested) — so their
+declarations would land at `dist/AdapterTemporal/AdapterTemporal.d.ts` /
+`dist/TemporalLocalizationProvider/TemporalLocalizationProvider.d.ts`, not matching the flat
+`dist/AdapterTemporal.js` / `dist/TemporalLocalizationProvider.js` the `lib.entry` `fileName` map
+produces — breaking the flat `./*` wildcard in `package.json`'s `exports` map for those two
+subpaths.
+**First attempt (rejected):** `bundleTypes: true` (the v5/`unplugin-dts` name for the old
+`rollupTypes`), powered by `@microsoft/api-extractor` — rolls each entry's declarations into one
+flat file regardless of source nesting, which would have solved this directly. Installed
+`@microsoft/api-extractor@^7.59.0` (an explicit devDependency, since `vite-plugin-dts` only lists
+it as an optional peer) and `@typescript/typescript6@^6.0.2` (a separate, unrelated requirement —
+`unplugin-dts` needs the TS *Compiler API* to generate declarations at all, which TypeScript 7+
+no longer bundles; this package stays regardless of the `bundleTypes` decision below). Hit a real
+bug: `Internal Error: Unable to follow symbol for "Promise"` from API Extractor while bundling —
+a known API-Extractor limitation, not something fixable from this project's config.
+**Decision:** Dropped `bundleTypes`/API Extractor entirely (removed the now-unused
+`@microsoft/api-extractor` devDependency) in favor of a simpler fix: added flat, root-level
+re-export wrapper files (`src/AdapterTemporal.ts`, `src/TemporalLocalizationProvider.tsx`) that
+each just `export { default } from './AdapterTemporal/AdapterTemporal'` (etc.), and pointed
+`vite.config.ts`'s `lib.entry` map and `src/index.ts`'s own imports at these flat wrappers instead
+of the nested originals. Since all four entries are now flat files directly under `src/`, the
+default (non-bundled) `entryRoot`-relative behavior emits every entry's own `.d.ts` flat in
+`dist/` too — matching the flat JS filenames — while internal implementation modules (e.g.
+`dist/format/formatByToken.d.ts`) still nest, which is harmless since only the flat entry `.d.ts`
+files are ever referenced by `exports`. No extra tooling/dependency needed beyond
+`@typescript/typescript6`. Verified: `dist/AdapterTemporal.d.ts` and `dist/TemporalLocalizationProvider.d.ts`
+both land flat, `tsc --noEmit` and `vitest run --project unit` stay clean, and a throwaway script
+importing straight from `dist/` (both the subpath and root-barrel forms) confirmed they resolve to
+the *same* function/class and that a built `AdapterTemporal` instance actually works
+(`adapter.date() instanceof Temporal.ZonedDateTime`, `formatByString('D')`, etc.) — not just that
+the build didn't error.
+
+### Real bug found — `firstDayOfWeekTable.ts` wasn't actually code-split (Milestone 4)
+**Finding:** The first `vite build` emitted an `INEFFECTIVE_DYNAMIC_IMPORT` warning:
+`src/week-info/firstDayOfWeekTable.ts` is dynamically imported by `ensureWeekInfo.ts` (as
+designed — see Milestone 1) but was *also* statically imported by `getFirstDayOfWeek.ts`, just to
+reach its `DEFAULT_FIRST_DAY` constant. Rollup can't code-split a module that's also reachable via
+a static import elsewhere, so the "small fallback table only loads when actually needed" design
+goal (stated explicitly in this file's own plan entry, and in Milestone 4's verification
+checklist) was silently not holding — the table would ship in every build regardless of whether
+the runtime has native `getWeekInfo()` support.
+**Fix:** Removed `DEFAULT_FIRST_DAY` from `firstDayOfWeekTable.ts` (it was just the literal `1`,
+i.e. Monday — the ISO/CLDR default) and inlined `const DEFAULT_FIRST_DAY = 1` directly in
+`getFirstDayOfWeek.ts` instead, with a comment explaining why (this exact code-splitting reason),
+so nothing in that module needs to import from `firstDayOfWeekTable.ts` at all. Verified: rebuilt,
+the warning is gone, and `firstDayOfWeekTable-*.js` now appears as its own separate chunk in
+`dist/`, distinct from the four entry chunks.
+
 ## Open spikes (to be resolved during implementation, logged here once settled)
-- **`vite-plugin-dts` multi-entry `.d.ts` emission shape** (Milestone 4): exact per-entry
-  declaration output configuration (flat `dist/<EntryName>.d.ts` files matching the JS `fileName`
-  map) depends on the installed `vite-plugin-dts` version's multi-entry support — needs a build
-  spike to confirm the right plugin options. — **UNRESOLVED**
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC
   trusted-publishing flow now supports establishing trust before a package's first publish, or
   whether one manual `npm publish --access public` is still required first. — **UNRESOLVED**

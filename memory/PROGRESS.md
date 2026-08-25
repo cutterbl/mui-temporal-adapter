@@ -73,15 +73,33 @@ step is actually completed and verified — this file is always meant to be an a
       `vitest run --project unit` both clean (4 files, 8 tests)
 
 ## Milestone 4 — Vite multi-entry library build
-- [ ] Author `src/TemporalLocalizationProvider/TemporalLocalizationProvider.tsx` (`use()` +
+- [x] Author `src/TemporalLocalizationProvider/TemporalLocalizationProvider.tsx` (`use()` +
       `<Suspense>` wrapper, per `PLAN.md`) — not originally itemized anywhere in Milestones 0–4; it
       needs to exist before this milestone's build-entry map can reference it, even though its own
-      component testing waits for the `component` Vitest project in Milestone 5; see `DECISIONS.md`
-- [ ] `vite.config.ts` multi-entry `build.lib`
-- [ ] `vite-plugin-dts` per-entry declaration output configured — log resolution in `DECISIONS.md`
-- [ ] Verify `dist/index.js`, `dist/createTemporalAdapter.js`, `dist/AdapterTemporal.js`, `dist/TemporalLocalizationProvider.js` + matching `.d.ts`
-- [ ] Verify `temporal-polyfill`/fallback-table land as shared separate on-demand chunks (not duplicated per entry)
-- [ ] Verify `es2024` target in emitted output
+      component testing waits for the `component` Vitest project in Milestone 5; see `DECISIONS.md`.
+      Module-level `adapterPromises` cache keyed by `Boolean(forcePolyfill):Boolean(forceWeekInfoFallback)`
+      (bounded to 4 entries) so `use()`'s stable-promise-reference requirement holds across renders
+      while still supporting Storybook/tests mounting different force-flag combinations
+- [x] `vite.config.ts` multi-entry `build.lib` (`index`, `createTemporalAdapter`, `AdapterTemporal`,
+      `TemporalLocalizationProvider`), `es2024` target, `react`/`react-dom`/`@mui/*`/`@emotion/*`
+      externalized, `temporal-polyfill`/fallback table left un-externalized for on-demand chunking
+- [x] `vite-plugin-dts` per-entry declaration output configured — resolved via flat root-level
+      re-export wrapper files (`src/AdapterTemporal.ts`, `src/TemporalLocalizationProvider.tsx`)
+      rather than `bundleTypes`/API Extractor (hit a real API Extractor bug); full writeup in
+      `DECISIONS.md`. New devDependency: `@typescript/typescript6` (required by `unplugin-dts` for
+      the TS Compiler API, which TypeScript 7+ no longer bundles) — unrelated to the bundling
+      decision, still needed either way
+- [x] Verified `dist/index.js`, `dist/createTemporalAdapter.js`, `dist/AdapterTemporal.js`,
+      `dist/TemporalLocalizationProvider.js` + matching flat `.d.ts` for each; also verified by
+      actually importing straight from a real `dist/` build (both subpath and root-barrel forms
+      resolve to the same function/class; a constructed `AdapterTemporal` instance works —
+      `date()`, `formatByString()`, `getCurrentLocaleCode()` all correct) — not just that the build
+      didn't error
+- [x] Verified `temporal-polyfill`/fallback-table land as shared separate on-demand chunks (not
+      duplicated per entry) — found & fixed a real bug in the process:
+      `firstDayOfWeekTable.ts` wasn't actually code-split (a static import in
+      `getFirstDayOfWeek.ts`, just for one constant, defeated it); see `DECISIONS.md`
+- [x] Verified `es2024` target in emitted output (no TS downlevel helpers present in any built chunk)
 
 ## Milestone 5 — Full Vitest suite
 - [ ] `test/adapter/getters-setters.test.ts`

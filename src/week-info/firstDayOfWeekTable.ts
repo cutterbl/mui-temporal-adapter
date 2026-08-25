@@ -51,6 +51,3 @@ export const firstDayOfWeekByRegion: Record<string, 1 | 2 | 3 | 4 | 5 | 6 | 7> =
   YE: 6,
   AF: 6,
 };
-
-/** The default first day of the week — Monday — used when a region isn't listed above. */
-export const DEFAULT_FIRST_DAY = 1;

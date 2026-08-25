@@ -1,5 +1,14 @@
 import { fallbackTable, forced } from './ensureWeekInfo';
-import { DEFAULT_FIRST_DAY } from './firstDayOfWeekTable';
+
+// Deliberately *not* imported from `firstDayOfWeekTable.ts` (even though that module
+// also documents this same value) — `ensureWeekInfo.ts` only reaches that module via a
+// dynamic `import()`, specifically so it lands in its own on-demand chunk, fetched
+// only by runtimes that actually need the fallback. A static import of it here, even
+// just for this one constant, would defeat that: Vite/Rollup can't code-split a module
+// that's also statically imported elsewhere (confirmed via an
+// `INEFFECTIVE_DYNAMIC_IMPORT` build warning before this was inlined — see
+// `DECISIONS.md`).
+const DEFAULT_FIRST_DAY = 1;
 
 /**
  * Resolves which day of the week a calendar should start on for a given
