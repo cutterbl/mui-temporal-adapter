@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ensureTemporal } from '../../src/temporal-runtime/ensureTemporal';
 
 /**
@@ -13,9 +13,6 @@ import { ensureTemporal } from '../../src/temporal-runtime/ensureTemporal';
 describe('ensureTemporal — no global present', () => {
   it('lazily installs a working polyfill, and is a safe no-op on a second call', async () => {
     delete (globalThis as { Temporal?: typeof Temporal }).Temporal;
-    // Force a fresh module evaluation — see the note in
-    // ensureTemporal.native.test.ts for why this is necessary in tests.
-    vi.resetModules();
     expect(typeof globalThis.Temporal).toBe('undefined');
 
     await ensureTemporal();

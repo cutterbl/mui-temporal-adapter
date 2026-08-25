@@ -23,16 +23,32 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] `tsc --noEmit` and `vitest run --project unit` both clean (4 files, 8 tests passing)
 
 ## Milestone 2 — `AdapterTemporal` core
-- [ ] `AdapterTemporal.types.ts`, `defaults.ts` (formats, escapedCharacters, formatTokenMap)
-- [ ] Constructor (locale default resolution, `iso8601` calendar)
-- [ ] Date builder / timezone methods (`date`, `getTimezone`, `setTimezone`, `toJsDate`)
-- [ ] Getters/setters (year/month/date/hours/minutes/seconds/milliseconds)
-- [ ] Arithmetic (`addYears`…`addSeconds`, `{ overflow: 'constrain' }`)
-- [ ] Comparisons (`isEqual`, `isSameYear/Month/Day/Hour`, `isAfter*`, `isBefore*`, `isWithinRange`)
-- [ ] Boundaries (`startOf*`, `endOf*`)
-- [ ] Week helpers (`getDaysInMonth`, `getWeekArray`, `getWeekNumber`, `getDayOfWeek`, `getYearRange`)
-- [ ] `format`/`parse`/`expandFormat` stubbed (throw not-implemented)
-- [ ] JSDoc written alongside every method above (not deferred)
+- [x] `AdapterTemporal.types.ts`, `defaults.ts` (formats, escapedCharacters, formatTokenMap)
+- [x] Constructor (locale default resolution, `iso8601` calendar)
+- [x] Date builder / timezone methods (`date`, `getTimezone`, `setTimezone`, `toJsDate`) — plus
+      `src/utils/{timezone,invalid}.ts` helpers (per the plan's directory layout)
+- [x] Getters/setters (year/month/date/hours/minutes/seconds/milliseconds)
+- [x] Arithmetic (`addYears`…`addSeconds`, `{ overflow: 'constrain' }`)
+- [x] Comparisons (`isEqual`, `isSameYear/Month/Day/Hour`, `isAfter*`, `isBefore*`, `isWithinRange`)
+- [x] Boundaries (`startOf*`, `endOf*`)
+- [x] Week helpers (`getDaysInMonth`, `getWeekArray`, `getWeekNumber`, `getDayOfWeek`, `getYearRange`)
+      — `getDayOfWeek` confirmed locale-relative (not raw ISO) by cross-checking `AdapterLuxon`; see
+      `DECISIONS.md`
+- [x] `getInvalidDate()`/`isValid()` — sentinel design resolved now rather than deferred to
+      Milestone 3, since it had no dependency on the format/parse engine; see `DECISIONS.md`
+- [x] `format`/`formatByString`/`parse`/`expandFormat` stubbed (throw not-implemented);
+      `formatNumber`/`is12HourCycleInCurrentLocale` implemented fully now (no format-engine
+      dependency)
+- [x] JSDoc written alongside every method above (not deferred)
+- [x] `src/createTemporalAdapter.ts` (async factory) + `src/index.ts` (root barrel) — not originally
+      itemized in this checklist; added now since `AdapterTemporal` alone isn't part of the intended
+      public API and couldn't be smoke-tested end-to-end without the factory; see `DECISIONS.md`
+- [x] Real bug found & fixed via an end-to-end smoke test (not committed): `ensureTemporal`'s
+      `force` path (Milestone 1) still silently failed on a *second* forced call in the same
+      process — superseded with a more robust fix (installs from `temporal-polyfill/implementation`
+      directly rather than depending on the self-installing `/global` entry's one-time side effect);
+      see `DECISIONS.md`. Milestone 1's two `ensureTemporal` test files updated accordingly (still
+      passing); `tsc --noEmit` and `vitest run --project unit` both clean (4 files, 8 tests)
 
 ## Milestone 3 — Format/parse token engine
 - [ ] `src/format/tokenizeFormat.ts`
@@ -43,6 +59,10 @@ step is actually completed and verified — this file is always meant to be an a
 - [ ] JSDoc continues alongside
 
 ## Milestone 4 — Vite multi-entry library build
+- [ ] Author `src/TemporalLocalizationProvider/TemporalLocalizationProvider.tsx` (`use()` +
+      `<Suspense>` wrapper, per `PLAN.md`) — not originally itemized anywhere in Milestones 0–4; it
+      needs to exist before this milestone's build-entry map can reference it, even though its own
+      component testing waits for the `component` Vitest project in Milestone 5; see `DECISIONS.md`
 - [ ] `vite.config.ts` multi-entry `build.lib`
 - [ ] `vite-plugin-dts` per-entry declaration output configured — log resolution in `DECISIONS.md`
 - [ ] Verify `dist/index.js`, `dist/createTemporalAdapter.js`, `dist/AdapterTemporal.js`, `dist/TemporalLocalizationProvider.js` + matching `.d.ts`

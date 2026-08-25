@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ensureTemporal } from '../../src/temporal-runtime/ensureTemporal';
 
 /**
@@ -25,11 +25,6 @@ describe('ensureTemporal — global already present', () => {
 
   it('loads the polyfill even when a global is already present, when force is true', async () => {
     (globalThis as { Temporal?: unknown }).Temporal = MARKER;
-    // Force a fresh module evaluation of temporal-polyfill/global — ES/Vite
-    // module graphs cache dynamic imports by specifier, so without this a
-    // prior test's real install (anywhere in the run) would make this a
-    // silent no-op instead of a genuine re-install.
-    vi.resetModules();
 
     await ensureTemporal({ force: true });
 

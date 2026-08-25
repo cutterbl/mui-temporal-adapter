@@ -213,6 +213,84 @@ US, CA, MX, BR, JP, KR, TW, HK, PH, TH, IL, ZA, CO, VE, PE, DO; Saturday-start: 
 BH, OM, JO, SY, IQ, DZ, MA, TN, LY, YE, AF) — everything else defaults to Monday, keeping the table
 genuinely small per decision 4, rather than attempting an exhaustive CLDR mirror.
 
+### `ensureTemporal` superseded: install directly from `temporal-polyfill/implementation` (Milestone 2)
+**Finding:** The Milestone 1 "delete the global first" fix (previous entry) was still incomplete.
+`temporal-polyfill/global`'s self-install is a one-time side effect of evaluating that module — a
+dynamic `import()` of an already-evaluated module specifier returns the cached module without
+re-running its top-level code. So a *second* `force: true` call (e.g. a consumer calling
+`createTemporalAdapter({ forcePolyfill: true })` on a page where `Temporal` — native or
+already-polyfilled — was installed earlier) would `delete globalThis.Temporal`, then get back the
+already-evaluated `/global` module, whose install step never re-runs — leaving `globalThis.Temporal`
+`undefined` afterward. Caught by an end-to-end smoke test exercising `forcePolyfill: true` after a
+prior, unforced `createTemporalAdapter()` call in the same process — not by the Milestone 1 unit
+tests, since each of those only ever forces once, from a clean module registry.
+**Decision:** `ensureTemporal()` no longer imports the self-installing `temporal-polyfill/global`
+entry point at all. It imports `temporal-polyfill/implementation` instead — a public, stable subpath
+in the polyfill's own `exports` map whose `Temporal` export is the polyfill's own implementation,
+unconditionally (no `NativeTemporal ||` preference baked in, unlike the package's base entry point)
+— and assigns it onto `globalThis.Temporal` itself, in `ensureTemporal`'s own function body, every
+time it's called with `force: true`. Because the assignment is code we control (not a module's
+cached side effect), it's correct no matter how many times this has already run or what it last
+did. The `delete globalThis.Temporal` step is no longer needed either, for the same reason.
+**Consequence:** simpler implementation overall (one `import()` + one assignment, no `delete`), and
+the two Milestone 1 test files' comments/`vi.resetModules()` calls referencing the old mechanism
+were updated/removed accordingly — both still pass unchanged in behavior.
+
+### `getInvalidDate()` sentinel design — RESOLVED (Milestone 2)
+**Decision:** `getInvalidDate()` returns a real, constructible `Temporal.ZonedDateTime` pinned to a
+fixed sentinel instant — JS `Date`'s own minimum representable value
+(`-8_640_000_000_000_000` epoch ms) in the `'UTC'` zone — rather than attempting to represent a
+genuinely invalid value (Temporal has none). `isValid(value)` returns `false` for `null` and for any
+value at exactly that sentinel instant, `true` otherwise. Implemented in `src/utils/invalid.ts`
+(`createInvalidDate()` / `isValidZonedDateTime()`), shared by `AdapterTemporal.getInvalidDate`/`.isValid`
+and by `AdapterTemporal.date()`'s own unparseable-input fallback.
+**Why:** This was flagged as an open spike back in planning (originally slated for Milestone 3, but
+resolved now since it has no dependency on the format/parse token engine). The chosen instant is
+comfortably inside Temporal's much wider supported range but far enough outside any realistic
+picker value to avoid colliding with a genuine date a consumer constructs.
+**Rejected alternative:** a `WeakSet`/instance-flag-based sentinel — rejected as more moving parts
+for no real benefit; a fixed, well-documented instant is simpler and just as reliable, since no
+real-world date will legitimately equal it.
+
+### `getDayOfWeek()` is locale-relative, not raw ISO (Milestone 2)
+**Finding:** Cross-checked `AdapterLuxon`'s actual implementation before writing this method —
+`getDayOfWeek = value => value.localWeekday ?? value.weekday` — confirming the `MuiPickersAdapter`
+interface's terse doc comment ("1-based, 1 = first day of the week, 7 = last day of the week") means
+*locale-relative* first day, not ISO Monday-first. Calendar-grid rendering aligns columns using this
+value together with `startOfWeek()`'s own locale-aware first day, so the two must agree.
+**Decision:** `AdapterTemporal.getDayOfWeek()` computes `((value.dayOfWeek - firstDay + 7) % 7) + 1`
+using the same `getFirstDayOfWeek(this.locale)` lookup `startOfWeek()`/`endOfWeek()` already use —
+`1` is always this adapter's locale's first day of the week, `7` its last.
+**Why it mattered:** using raw ISO `dayOfWeek` (Monday-first) directly would have silently
+misaligned calendar-grid columns for any locale whose week doesn't start on Monday (e.g. `en-US`),
+without failing any type check — this was a correctness gap that copying the interface's own JSDoc
++ another adapter's real behavior caught before it shipped, not something a smoke test happened to
+exercise.
+
+### `'default'` and `'system'` timezones both resolve to the runtime's current zone (Milestone 2)
+**Decision:** `src/utils/timezone.ts`'s `resolveZone()` maps both the `'default'` and `'system'`
+picker-timezone values to `Temporal.Now.timeZoneId()` — the same concrete IANA zone id.
+**Why:** `Temporal.ZonedDateTime` has no separate "this was deliberately the system zone at creation
+time" marker the way some date libraries' `Zone` objects do (e.g. Luxon's zone `type: 'system'`) —
+every zone a `ZonedDateTime` carries is just a concrete IANA identifier. `dayjs`'s own adapter
+collapses `'default'` to "no explicit zone" (effectively system-local) the same way, for the same
+underlying reason. A consequence: `AdapterTemporal.getTimezone()` always reports the concrete zone
+id (e.g. `'America/New_York'`), never the literal string `'system'` — a minor, documented divergence
+from Luxon/dayjs's adapters, not a functional gap.
+
+### Milestone 2 checklist gap-fill: entry-point files (Milestone 2)
+**Finding:** Neither `src/createTemporalAdapter.ts` nor the root barrel `src/index.ts` had an
+explicit checklist line in `PROGRESS.md`'s Milestone 2 (or anywhere in Milestones 0–4) — an oversight
+in the original plan, even though `createTemporalAdapter()` has no dependency on Milestone 3's
+format/parse engine and `AdapterTemporal` alone isn't part of the package's intended public API
+surface (consumers only ever get it via the factory).
+**Decision:** Authored both now, as part of finishing Milestone 2, since without them the adapter
+couldn't even be exercised end-to-end for this milestone's own smoke-testing. `PROGRESS.md` amended
+to record this. `TemporalLocalizationProvider.tsx` (the optional React `use()`/`Suspense` wrapper)
+remains genuinely deferred — it needs the `component` Vitest project (jsdom + Testing Library),
+which isn't wired until Milestone 5 — but `PROGRESS.md`'s Milestone 4 checklist now explicitly notes
+it needs to exist before that milestone's build-entry wiring can reference it.
+
 ## Implementation-time findings (risks noted, not blocking)
 
 ### Peer-range lag on bleeding-edge majors (Milestone 0)
@@ -245,9 +323,6 @@ type-check in their own app code — worth a one-line callout in the README/docs
 not something this package can control), but not an open item for us to build.
 
 ## Open spikes (to be resolved during implementation, logged here once settled)
-- **`getInvalidDate()` sentinel design** (Milestone 3): Temporal has no first-class "invalid" value
-  (unlike Luxon's `DateTime.invalid(...)`) — need a concrete fixed sentinel value plus a
-  try/catch-based `isValid()`. — **UNRESOLVED**
 - **`vite-plugin-dts` multi-entry `.d.ts` emission shape** (Milestone 4): exact per-entry
   declaration output configuration (flat `dist/<EntryName>.d.ts` files matching the JS `fileName`
   map) depends on the installed `vite-plugin-dts` version's multi-entry support — needs a build
