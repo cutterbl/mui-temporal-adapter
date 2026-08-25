@@ -181,6 +181,38 @@ only changes how the mapping is expressed, not what resolves.
 "what is a public module" — worth calling out clearly in a code comment there when Milestone 4
 authors it, since it's easy to forget that adding an entry there is now sufficient on its own.
 
+### `ensureTemporal`'s `force` option must delete the global first (Milestone 1)
+**Finding:** `temporal-polyfill/global`'s installer (`shim.js`) computes
+`const NativeTemporal = globalThis.Temporal;` at its own module-evaluation time and skips
+installing if that's truthy — it treats *any* pre-existing `globalThis.Temporal` as "native,"
+not just a genuine engine intrinsic. So the original design (re-`import()` the same specifier
+to force a reinstall over an already-present global) silently no-ops: the import resolves to a
+module that, even freshly evaluated, still sees the existing value and refuses to overwrite it.
+**Decision:** `ensureTemporal({ force: true })` now explicitly `delete`s
+`globalThis.Temporal` before importing, so the polyfill's own native-check genuinely sees
+`undefined` and installs. This is also what makes `force`/`forcePolyfill` actually useful for the
+`LazyPolyfillEnvironment` Storybook story later (Milestone 7) — without this fix, forcing the
+polyfill path in a browser that *does* have native Temporal wouldn't have worked either.
+**Testing note:** discovered via a failing test, not by reading the polyfill's source first — the
+underlying mechanism (dynamic `import()` of the same specifier is cached across test files within
+one Vitest run) is also why the tests call `vi.resetModules()` before any assertion that expects a
+genuine (re-)installation to occur, rather than relying on execution order between test files.
+
+### Fallback table keyed by region, resolved via `Intl.Locale().maximize()` (Milestone 1)
+**Decision:** `getFirstDayOfWeek()` resolves the fallback table by region code (e.g. `"US"`,
+`"FR"`), using `new Intl.Locale(localeCode).maximize().region` to fill in the likely region for
+locale tags that don't specify one (e.g. `"fr"` → region `"FR"`) — rather than the plan's original
+sketch of a plain `localeCode.split('-')[0]` language-subtag fallback.
+**Why:** CLDR week-data (which both the native API and our fallback table are sourced from) is
+fundamentally keyed by region/territory, not language — a naive language-subtag split would key
+the table wrong for any locale tag lacking an explicit region, and `Intl.Locale`'s own
+likely-subtags resolution (`maximize()`) is the standard, already-available mechanism for filling
+that in correctly, with no extra dependency.
+**Table contents:** only regions that differ from the Monday default are enumerated (Sunday-start:
+US, CA, MX, BR, JP, KR, TW, HK, PH, TH, IL, ZA, CO, VE, PE, DO; Saturday-start: EG, SA, AE, QA, KW,
+BH, OM, JO, SY, IQ, DZ, MA, TN, LY, YE, AF) — everything else defaults to Monday, keeping the table
+genuinely small per decision 4, rather than attempting an exhaustive CLDR mirror.
+
 ## Implementation-time findings (risks noted, not blocking)
 
 ### Peer-range lag on bleeding-edge majors (Milestone 0)

@@ -13,13 +13,14 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] Resolve global `Temporal` typing spike — **resolved**: TS 7.0.2's bundled `ESNext` lib already ships ambient `Temporal` global types natively, no ambient `.d.ts` needed from this package; logged in `DECISIONS.md`
 
 ## Milestone 1 — Feature-detection / lazy-load modules
-- [ ] `src/temporal-runtime/ensureTemporal.ts` + `getTemporal.ts`
-- [ ] Unit tests: native-Temporal-present path
-- [ ] Unit tests: native-Temporal-absent → lazy polyfill import path
-- [ ] `src/week-info/firstDayOfWeekTable.ts` (CLDR-sourced static data)
-- [ ] `src/week-info/ensureWeekInfo.ts` + `getFirstDayOfWeek.ts`
-- [ ] Unit tests: native `getWeekInfo` present path
-- [ ] Unit tests: native `getWeekInfo` absent → lazy fallback-table import path
+- [x] `src/temporal-runtime/ensureTemporal.ts` + `getTemporal.ts`
+- [x] Unit tests: native-Temporal-present path (`test/temporal-runtime/ensureTemporal.native.test.ts`)
+- [x] Unit tests: native-Temporal-absent → lazy polyfill import path (`ensureTemporal.polyfill.test.ts`) — found & fixed a real bug: `force` must delete the global first, since temporal-polyfill's installer treats any existing `globalThis.Temporal` as native (logged in `DECISIONS.md`)
+- [x] `src/week-info/firstDayOfWeekTable.ts` (CLDR-sourced static data, region-keyed, exceptions-only)
+- [x] `src/week-info/ensureWeekInfo.ts` + `getFirstDayOfWeek.ts` — resolved via `Intl.Locale().maximize().region`, not naive language-tag splitting (logged in `DECISIONS.md`)
+- [x] Unit tests: native `getWeekInfo` present path (`test/week-info/ensureWeekInfo.native.test.ts`)
+- [x] Unit tests: native `getWeekInfo` absent → lazy fallback-table import path, plus forced-fallback-with-native-present path (`ensureWeekInfo.fallback.test.ts`)
+- [x] `tsc --noEmit` and `vitest run --project unit` both clean (4 files, 8 tests passing)
 
 ## Milestone 2 — `AdapterTemporal` core
 - [ ] `AdapterTemporal.types.ts`, `defaults.ts` (formats, escapedCharacters, formatTokenMap)
