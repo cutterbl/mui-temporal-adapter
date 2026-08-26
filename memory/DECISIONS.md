@@ -728,6 +728,21 @@ renders with genuinely correct Monday-first French weekday headers (`L,M,M,J,V,S
 class of bug (subpath-vs-bare-name external mismatch) this manual step exists to catch — no
 automated test in this repo runs through Rollup's actual bundling of `dist/`.
 
+### Real bug — Docs sidebar wasn't actually sorted by the numbered titles (user-reported, post-Milestone 7)
+
+**Finding:** the 8 `stories/docs/*.mdx` pages were each titled with a leading number
+(`'Docs/1. Introduction'` … `'Docs/8. Glossary'`) specifically so they'd read in order in the
+Storybook sidebar — but the user reported (with a screenshot) that the rendered sidebar showed
+them in an arbitrary order (`2, 8, 6, 1, 4, 5, 7, 3`), not sequential. Root cause: Storybook's
+actual default `storySort` method is `'configure'` (roughly, file-discovery/import order), _not_
+alphabetical-by-title as might be assumed — the numbered titles alone were never sufficient to
+produce a sorted sidebar.
+**Fix:** set `parameters.options.storySort = { method: 'alphabetical' }` in `.storybook/preview.tsx`.
+Sorting alphabetically by title string correctly orders the single-digit `1.`–`8.` prefixes (no
+"10 before 2" lexicographic gotcha to worry about at this count). Verified against the real
+rendered sidebar DOM (not just the build output) via Playwright against a served
+`storybook-static` build — the 8 Docs entries now render in the DOM in the order 1 through 8.
+
 ## Open spikes (to be resolved during implementation, logged here once settled)
 
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC

@@ -218,6 +218,11 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       files, 10 stories, all green
 - [x] `tsc --noEmit`, `pnpm lint`, `pnpm format:check`, `pnpm test:all` (23 files / 103 tests),
       `pnpm build`, and `pnpm build:storybook` all re-verified clean
+- [x] Real bug found (user-reported, with a screenshot, after this milestone's initial commit)
+      & fixed: the numbered Docs titles alone didn't actually sort the sidebar — Storybook's
+      real default `storySort` method is discovery-order, not alphabetical. Added
+      `parameters.options.storySort: { method: 'alphabetical' }` to `preview.tsx`; verified
+      against the real rendered sidebar DOM via Playwright. See `DECISIONS.md`.
 
 ## Milestone 8 — README + packaging smoke test
 
