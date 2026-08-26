@@ -1,0 +1,66 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/7. Troubleshooting" />
+
+# Troubleshooting
+
+A few real gotchas that are easy to run into, especially early on — each with what you're
+probably seeing, why, and the fix.
+
+## "I used `Temporal.*` and got an error that it's not defined"
+
+**What you're probably seeing:** something like `ReferenceError: Temporal is not defined`, or
+this package's own error message asking if you forgot to `await createTemporalAdapter()`.
+
+**Why:** as explained on the [Getting Started](/docs/docs-2-getting-started--docs) page, this
+package needs a brief setup step to finish before `Temporal` is guaranteed to exist. If your
+code runs _before_ that step finishes — for example, at the very top of a file, outside any
+component, before your app has rendered — `Temporal` may not be available yet.
+
+**The fix:** only use `Temporal.*` from code that runs _after_ setup has finished — inside a
+component rendered underneath `TemporalLocalizationProvider`, or after the line where you
+`await createTemporalAdapter()`. See [Time Zones](/docs/docs-5-time-zones--docs) for a worked
+example of reading/writing values safely.
+
+## "My picker never renders — it's stuck loading forever"
+
+**What you're probably seeing:** the `<Suspense>` fallback (like a spinner or "Loading…" text)
+staying on screen indefinitely, with no error in the console.
+
+**Why:** this usually means `TemporalLocalizationProvider` isn't wrapped in a `<Suspense>`
+boundary at all — without one, React has nowhere to "catch" the loading state, which can leave
+things in an unexpected state instead of showing your fallback correctly.
+
+**The fix:** double-check that `<Suspense fallback={...}>` is actually wrapping
+`TemporalLocalizationProvider`, exactly as shown on the
+[Getting Started](/docs/docs-2-getting-started--docs) page.
+
+## "`require()` doesn't work for this package"
+
+**What you're probably seeing:** an error like `require() of ES Module not supported`, or
+`Cannot use import statement outside a module`.
+
+**Why:** this package is published as **ESM only** (the modern JavaScript module format) —
+there's no CommonJS (`require()`-style) version available.
+
+**The fix:** if your own project also uses modern `import`/`export` syntax (most current React
+projects do, including anything built with Vite, Next.js, or Create React App), you likely
+don't need to do anything — this only comes up in older or unusually-configured projects.
+Check that your project's `package.json` has `"type": "module"`, or that your bundler is
+already configured for ESM (which most modern ones are, by default).
+
+## "TypeScript says `Temporal` doesn't exist / isn't typed correctly"
+
+**What you're probably seeing:** a TypeScript error like `Cannot find name 'Temporal'`, even
+though your code runs fine in the browser.
+
+**Why:** `Temporal`'s type definitions come from TypeScript's own bundled library files, not
+from this package. If your TypeScript version is old enough to predate Temporal support, it
+won't know the type exists yet.
+
+**The fix:** update to a recent TypeScript version. This isn't something this package can fix
+on its own — it's purely about which TypeScript version your project uses.
+
+Still stuck? Check the [Glossary](/docs/docs-8-glossary--docs) in case an unfamiliar term is
+the sticking point, or revisit [Getting Started](/docs/docs-2-getting-started--docs) from the
+top.

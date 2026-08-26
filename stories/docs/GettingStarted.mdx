@@ -1,0 +1,84 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/2. Getting Started" />
+
+# Getting Started
+
+This page walks through the smallest possible working example, one step at a time. By the
+end, you'll have a single date picker rendering on the page.
+
+## 1. Install the package
+
+```sh
+npm install @cxing/mui-temporal-adapter
+```
+
+This package expects you to already have MUI's date pickers installed (`@mui/x-date-pickers`)
+along with `@mui/material`, `react`, and `react-dom` — the same things you'd need to use MUI's
+pickers with any other date library.
+
+One thing worth knowing up front: this package is published as **ESM only** (the modern
+JavaScript module format). If your project is set up in an unusual or very old way, see the
+[Troubleshooting](/docs/docs-7-troubleshooting--docs) page.
+
+## 2. Wait for the setup step to finish
+
+As explained on the [Introduction](/docs/docs-1-introduction--docs) page, this package needs a
+brief setup step before it can render pickers — it checks whether the visitor's browser
+already has [Temporal](/docs/docs-8-glossary--docs#temporal) built in, and if not, fetches a
+small stand-in copy. There are two ways to wait for that step; pick whichever fits your app.
+
+### Option A — the convenience component
+
+The simplest option for most apps. Wrap your pickers in `TemporalLocalizationProvider`, and
+wrap _that_ in React's `<Suspense>` (a built-in React component for "show a loading state
+while something is getting ready"):
+
+```tsx
+import { Suspense } from 'react';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import TemporalLocalizationProvider from '@cxing/mui-temporal-adapter/TemporalLocalizationProvider';
+
+function App() {
+  return (
+    <Suspense fallback={<p>Loading…</p>}>
+      <TemporalLocalizationProvider>
+        <DatePicker label="Pick a date" />
+      </TemporalLocalizationProvider>
+    </Suspense>
+  );
+}
+```
+
+That's it — `<Suspense>`'s `fallback` shows briefly while the setup step runs, then your
+`<DatePicker>` appears.
+
+### Option B — set it up yourself, once, at startup
+
+If you'd rather do the setup once when your app first loads (instead of inside your component
+tree), call `createTemporalAdapter` directly:
+
+```tsx
+import { createRoot } from 'react-dom/client';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import createTemporalAdapter from '@cxing/mui-temporal-adapter/createTemporalAdapter';
+
+const AdapterTemporal = await createTemporalAdapter();
+
+createRoot(document.getElementById('root')!).render(
+  <LocalizationProvider dateAdapter={AdapterTemporal}>
+    <DatePicker label="Pick a date" />
+  </LocalizationProvider>,
+);
+```
+
+Both options end up in the same place — a `LocalizationProvider` (MUI's own component, which
+this package plugs into) wrapping your pickers.
+
+## 3. Add more pickers
+
+Once you're wrapped in either `TemporalLocalizationProvider` or a `LocalizationProvider` using
+`AdapterTemporal`, every MUI X picker component works underneath it with no extra setup per
+component. See [Using the Pickers](/docs/docs-3-using-the-pickers--docs) for a runnable example
+of each one.

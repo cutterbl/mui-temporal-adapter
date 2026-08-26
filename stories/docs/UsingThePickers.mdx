@@ -1,0 +1,94 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/3. Using the Pickers" />
+
+# Using the Pickers
+
+Every example on this page assumes you've already wrapped your app the way
+[Getting Started](/docs/docs-2-getting-started--docs) describes. Each one is a complete,
+runnable snippet — copy it in and it'll work as-is.
+
+## DatePicker
+
+A text field with a small calendar icon that opens a popup calendar. Reach for this when you
+want a compact field that doesn't take up much space until the visitor actually opens it.
+
+```tsx
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
+<DatePicker label="Start date" />;
+```
+
+## DateField
+
+Just the keyboard-editable text field, with no popup calendar at all. Reach for this when
+screen space is tight, or when you know the visitor will mostly type the date rather than
+click through a calendar.
+
+```tsx
+import { DateField } from '@mui/x-date-pickers/DateField';
+
+<DateField label="Start date" />;
+```
+
+## DateCalendar
+
+The calendar grid on its own, always visible — no popup, no text field. Reach for this when
+you want the calendar to be the main event on the page, rather than tucked behind a click.
+
+```tsx
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+
+<DateCalendar />;
+```
+
+## TimePicker
+
+Like `DatePicker`, but for a time of day instead of a date — no date is involved at all. Reach
+for this when only the time matters, like "what time should the reminder go off."
+
+```tsx
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+
+<TimePicker label="Reminder time" />;
+```
+
+## TimeField
+
+The keyboard-editable-only version of `TimePicker`, the same way `DateField` is to
+`DatePicker`.
+
+```tsx
+import { TimeField } from '@mui/x-date-pickers/TimeField';
+
+<TimeField label="Reminder time" />;
+```
+
+## DateTimePicker
+
+A date **and** a time together, in one field. Reach for this when both matter at once, like
+scheduling an appointment.
+
+```tsx
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+
+<DateTimePicker label="Appointment" />;
+```
+
+## DateTimeField
+
+The keyboard-editable-only version of `DateTimePicker`.
+
+```tsx
+import { DateTimeField } from '@mui/x-date-pickers/DateTimeField';
+
+<DateTimeField label="Appointment" />;
+```
+
+## What you get back
+
+Whichever component you use, its value is a `Temporal.ZonedDateTime` — the specific Temporal
+type this package builds on, which carries a date, a time, and a time zone together (see the
+[Glossary](/docs/docs-8-glossary--docs) if any of those words are new). If you need to read or
+set that value yourself — for a controlled field, or a minimum/maximum date — see the
+[Time Zones](/docs/docs-5-time-zones--docs) page for worked examples.

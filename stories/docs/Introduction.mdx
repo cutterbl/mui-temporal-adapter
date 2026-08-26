@@ -1,0 +1,57 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/1. Introduction" />
+
+# @cxing/mui-temporal-adapter
+
+JavaScript is getting its own built-in toolkit for working with dates and times, called
+**Temporal**. It's part of the language itself — no extra library to install, and it fixes a
+lot of the confusing, error-prone parts of JavaScript's old `Date` object.
+
+This package lets your app use [MUI's date and time pickers](https://mui.com/x/react-date-pickers/)
+with that new toolkit. And if someone visiting your app is using a browser that doesn't have
+Temporal built in yet, this package quietly fills in the gap for them — automatically, in the
+background — so you don't have to think about it, and they don't either.
+
+## What's actually in this package?
+
+Three things, and you'll usually only need the first two:
+
+- **`createTemporalAdapter`** — a small setup function you call once, when your app starts.
+  It checks what the visitor's browser supports and gets everything ready.
+- **`TemporalLocalizationProvider`** — an optional convenience component that does that setup
+  for you, so you can skip calling `createTemporalAdapter` yourself in simple cases.
+- **`AdapterTemporal`** — the piece that actually connects Temporal to MUI's pickers. You'll
+  rarely touch this directly; the two setup helpers above hand it to MUI for you.
+
+## Why does "setup" need to happen at all?
+
+Here's the part that makes this package a little different from some others: not every
+browser has Temporal built in yet (support is still rolling out). When a visitor's browser
+doesn't have it, this package needs to fetch a small stand-in copy of Temporal before your
+pickers can work — and fetching something takes a moment, even if it's brief. That's the
+whole reason the setup step exists: it waits for that moment to finish, _then_ your app
+renders its pickers.
+
+If the visitor's browser already has Temporal built in (increasingly the common case), this
+setup step still runs, but it finishes essentially instantly — there's nothing to fetch.
+
+The next page, **Getting Started**, walks through exactly what this setup step looks like in
+code — it's only a couple of lines.
+
+## Where to go from here
+
+- **[Getting Started](/docs/docs-2-getting-started--docs)** — install the package and get a
+  single picker working, step by step.
+- **[Using the Pickers](/docs/docs-3-using-the-pickers--docs)** — a quick example for every
+  picker component this package supports.
+- **[Locales & First Day of the Week](/docs/docs-4-locales-first-day-of-the-week--docs)**
+  and **[Time Zones](/docs/docs-5-time-zones--docs)** — how this package handles two of the
+  trickiest parts of dates: which day a calendar starts on, and what time zone a moment is
+  shown in.
+- **[How the Fallbacks Work](/docs/docs-6-how-the-fallbacks-work--docs)** — more detail on the
+  "quietly fills in the gap" behavior mentioned above, for the curious.
+- **[Troubleshooting](/docs/docs-7-troubleshooting--docs)** — fixes for the handful of mistakes
+  that are easy to make when you're new to this package.
+- **[Glossary](/docs/docs-8-glossary--docs)** — plain-English definitions for every unfamiliar
+  term used across these pages, in one place.

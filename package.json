@@ -1,0 +1,115 @@
+{
+  "name": "@cxing/mui-temporal-adapter",
+  "version": "0.1.0",
+  "description": "A Temporal-API-backed dateAdapter for @mui/x-date-pickers, with on-demand polyfill fallbacks for browsers lacking native Temporal or locale week-info support.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "dev": "storybook dev -p 6006",
+    "build": "vite build",
+    "build:storybook": "storybook build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --project unit --project component",
+    "test:coverage": "vitest run --project unit --project component --coverage",
+    "test:storybook": "vitest run --project storybook",
+    "test:all": "vitest run",
+    "release": "semantic-release",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "mui",
+    "material-ui",
+    "date-picker",
+    "temporal",
+    "date-adapter",
+    "x-date-pickers"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cutterbl/mui-temporal-adapter.git"
+  },
+  "author": "Steve 'Cutter' Blades",
+  "dependencies": {
+    "temporal-polyfill": "^1.0.4"
+  },
+  "peerDependencies": {
+    "@mui/material": "^7.3.0 || ^9.0.0",
+    "@mui/x-date-pickers": "^9.0.0",
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@eslint/js": "^10.0.1",
+    "@mui/material": "^9.3.1",
+    "@mui/x-date-pickers": "^9.12.0",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^11.0.1",
+    "@semantic-release/github": "^12.0.9",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "@storybook/addon-docs": "^10.5.10",
+    "@storybook/addon-vitest": "^10.5.10",
+    "@storybook/react-vite": "^10.5.10",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^64.2.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-storybook": "^10.5.10",
+    "globals": "^17.11.0",
+    "husky": "^9.1.7",
+    "jsdom": "^30.0.1",
+    "lint-staged": "^17.3.0",
+    "playwright": "^1.62.1",
+    "prettier": "^3.9.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "semantic-release": "^25.0.9",
+    "storybook": "^10.5.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.68.0",
+    "vite": "^8.2.2",
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^4.1.11"
+  }
+}

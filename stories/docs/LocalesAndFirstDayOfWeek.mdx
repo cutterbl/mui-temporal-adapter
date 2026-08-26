@@ -1,0 +1,53 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/4. Locales & First Day of the Week" />
+
+# Locales & First Day of the Week
+
+## What's a "locale"?
+
+A **locale** is just the part that tells a website which language or country style to use —
+things like which language to display text in, how to write numbers, and (the part this page
+is about) which day a calendar week starts on. A locale is usually written as a short code,
+like `'en-US'` (English, United States) or `'fr-FR'` (French, France).
+
+## Why does the calendar start on a different day in different places?
+
+If you've used a calendar app in more than one country, you may have noticed the grid doesn't
+always start on the same day. In the United States, calendars usually start the week on
+Sunday. In France, and in most of Europe, they start on Monday. This isn't a technical
+detail — it's just a real, long-standing difference in convention between places, and a
+calendar that "gets it wrong" for a visitor's own country looks unfamiliar and harder to read.
+
+Try it yourself in the **[First Day of the Week](/docs/locales-first-day-of-the-week--switch-locale)**
+story — switch the locale in the Controls panel and watch the calendar's starting day change.
+
+## How this package picks a default
+
+You don't have to set a locale by hand. If you don't specify one, this package automatically
+uses the visitor's own browser/device locale — the same setting their operating system already
+uses for dates, numbers, and so on. Most of the time, that's exactly the behavior you want:
+each visitor sees a calendar that already matches what they're used to.
+
+## Overriding the locale
+
+Sometimes you _do_ want to set the locale explicitly — for example, if your app lets a user
+choose their own language preference in their account settings, separate from their browser's
+default. Pass it as the `adapterLocale` prop on `LocalizationProvider` (or
+`TemporalLocalizationProvider`, which forwards it along):
+
+```tsx
+<TemporalLocalizationProvider adapterLocale="fr-FR">
+  <DateCalendar /> {/* now starts the week on Monday, per fr-FR's convention */}
+</TemporalLocalizationProvider>
+```
+
+## Where this information actually comes from
+
+Modern browsers have a built-in way to ask "what day does the week start on for this locale?"
+This package uses that directly when it's available. Older browsers don't have it yet — for
+those, this package quietly falls back to a small built-in table with the same information,
+sourced from the same public reference data (called CLDR) that browsers themselves use. Either
+way, a visitor sees the correct starting day for their locale; see
+[How the Fallbacks Work](/docs/docs-6-how-the-fallbacks-work--docs) for more on this pattern in
+general.

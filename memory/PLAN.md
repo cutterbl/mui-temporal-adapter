@@ -25,7 +25,7 @@ This is a brand-new package, built from an empty folder, meant to be a clean, te
 3. **Temporal polyfill: `temporal-polyfill`, installed onto `globalThis.Temporal`.** Once resolved (native or polyfilled), `Temporal` must be a real ambient global — a developer reaching for Temporal reaches for MDN/TC39 docs and expects `Temporal.PlainDate.from(...)` etc. to just work, with no bespoke accessor from this package. So when native support is absent, `ensureTemporal()` dynamically imports the polyfill's self-installing global entry point (`temporal-polyfill/global`), which assigns `Temporal` onto `globalThis` itself; when native support exists, nothing needs installing — it's already global. Either way, by the time `createTemporalAdapter()` resolves, `globalThis.Temporal` is guaranteed to exist and consumer code (inside and outside the adapter) uses it directly, exactly as documented upstream. `temporal-polyfill` is a real `dependencies` entry (not peer) since our code imports it dynamically, not the consumer.
 4. **Week-info fallback: our own small hand-rolled `locale → firstDay` static table**, sourced from the same CLDR week-data that backs `Intl.Locale#getWeekInfo` natively, kept as its own module so it's only pulled in (code-split) when native `getWeekInfo` is missing.
 5. **Default locale = the browser's (or runtime's) default locale, not a hardcoded string.** When `AdapterTemporal` is constructed without an explicit `locale` (i.e. `LocalizationProvider`'s `adapterLocale` prop is unset, so MUI calls `new AdapterTemporal({ locale: undefined, ... })`), it falls back to `Intl.DateTimeFormat().resolvedOptions().locale` — **not** `navigator.language`. That specific API is preferred because: (a) it's the exact locale identifier ICU will actually use for the adapter's own internal `Intl.DateTimeFormat`/`Intl.Locale#getWeekInfo` calls, so the "default locale" and "locale actually driving formatting" can never drift apart; (b) it's pure ECMA-402, no DOM dependency, so it works identically in the browser and in Node/SSR with no `typeof window` branching — `navigator.language` doesn't exist server-side. This resolution happens once, in the constructor, and is exposed via `getCurrentLocaleCode()` like every other adapter.
-6. **Package name `@cxing/mui-temporal-adapter`; per-module default exports, deep-subpath-first.** Every public module (`createTemporalAdapter`, `AdapterTemporal`, `TemporalLocalizationProvider`) has its own build entry and its own `export default`, importable directly by subpath — `import createTemporalAdapter from '@cxing/mui-temporal-adapter/createTemporalAdapter'` — mirroring `@mui/material`'s per-component convention (not `@mui/x-date-pickers`'s named-export convention, which was the other option considered). The root barrel (`@cxing/mui-temporal-adapter`) re-exports each module's default as a named export — `export { default as createTemporalAdapter } from './createTemporalAdapter'` — so `import { createTemporalAdapter } from '@cxing/mui-temporal-adapter'` also works; subpath imports are the documented/preferred form (smaller import footprint, matches the requested pattern), the root barrel is a supported convenience. This requires a **multi-entry** Vite library build (one output file + declaration per public module) rather than a single-entry setup.
+6. **Package name `@cxing/mui-temporal-adapter`; per-module default exports, deep-subpath-first.** Every public module (`createTemporalAdapter`, `AdapterTemporal`, `TemporalLocalizationProvider`) has its own build entry and its own `export default`, importable directly by subpath — `import createTemporalAdapter from '@cxing/mui-temporal-adapter/createTemporalAdapter'` — mirroring `@mui/material`'s per-component convention (not `@mui/x-date-pickers`'s named-export convention, which was the other option considered). The root barrel (`@cxing/mui-temporal-adapter`) re-exports each module's default as a named export — `export { default as createTemporalAdapter } from './createTemporalAdapter'` — so `import { createTemporalAdapter } from '@cxing/mui-temporal-adapter'` also works; subpath imports are the documented/preferred form (smaller import footprint, matches the requested pattern), the root barrel is a supported convenience. This requires a **multi-entry** Vite library build (one output file + declaration per public module) rather than a single-entry setup. `package.json`'s `exports` map uses a generic `"./*"` pattern (`{ "types": "./dist/*.d.ts", "import": "./dist/*.js" }`) rather than one hand-enumerated subpath per module, so adding a new public module later only means adding it to `vite.config.ts`'s `build.lib.entry` map — no further `package.json` edit needed (see decision log).
 
 ## Directory layout
 
@@ -107,7 +107,9 @@ export async function ensureTemporal(opts?: { force?: boolean }) {
 // bespoke import from this package.
 export function getTemporal(): typeof Temporal {
   if (typeof globalThis.Temporal === 'undefined') {
-    throw new Error('[AdapterTemporal] await createTemporalAdapter() before rendering LocalizationProvider');
+    throw new Error(
+      '[AdapterTemporal] await createTemporalAdapter() before rendering LocalizationProvider',
+    );
   }
   return globalThis.Temporal;
 }
@@ -136,7 +138,7 @@ export function getFirstDayOfWeek(localeCode: string): number {
 ```ts
 // src/createTemporalAdapter.ts — own build entry / subpath: '@cxing/mui-temporal-adapter/createTemporalAdapter'
 export interface TemporalAdapterOptions {
-  forcePolyfill?: boolean;         // force the temporal-polyfill path — for tests/Storybook
+  forcePolyfill?: boolean; // force the temporal-polyfill path — for tests/Storybook
   forceWeekInfoFallback?: boolean; // force the static-table path — for tests/Storybook
   /** Default locale for the resolved AdapterTemporal class when constructed with no explicit
    *  `locale`/`adapterLocale`. Optional — omit to let AdapterTemporal fall back to
@@ -144,8 +146,11 @@ export interface TemporalAdapterOptions {
   locale?: string;
 }
 export type TemporalAdapterConstructor = new (options?: AdapterTemporalOptions) => AdapterTemporal;
-export default async function createTemporalAdapter(options?: TemporalAdapterOptions): Promise<TemporalAdapterConstructor>;
+export default async function createTemporalAdapter(
+  options?: TemporalAdapterOptions,
+): Promise<TemporalAdapterConstructor>;
 ```
+
 ```ts
 // src/index.ts — root barrel, subpath: '@cxing/mui-temporal-adapter'
 export { default as createTemporalAdapter } from './createTemporalAdapter';
@@ -155,9 +160,11 @@ export type { AdapterTemporalOptions } from './AdapterTemporal/AdapterTemporal.t
 export { default as TemporalLocalizationProvider } from './TemporalLocalizationProvider/TemporalLocalizationProvider';
 export type { TemporalLocalizationProviderProps } from './TemporalLocalizationProvider/TemporalLocalizationProvider';
 ```
+
 No bespoke `getTemporal()`/similar public accessor — once `createTemporalAdapter()` resolves, `Temporal` is guaranteed to exist as an ambient global, and consumer code is expected to reference `Temporal.*` directly, exactly as TC39/MDN document it.
 
 `TemporalLocalizationProvider` (`export default`, own build entry, subpath `'@cxing/mui-temporal-adapter/TemporalLocalizationProvider'`) — a thin wrapper around `createTemporalAdapter()` + `LocalizationProvider`, built on React 19's `use()` hook + `<Suspense>`:
+
 - A module-level `adapterPromise` singleton memoizes the `createTemporalAdapter()` call (required for `use()`'s stable-promise-reference contract); every mount anywhere in the app shares one resolution.
 - Props: `locale?: string` (forwarded to `LocalizationProvider`'s `adapterLocale`), `forcePolyfill?: boolean` and `forceWeekInfoFallback?: boolean` (testing/Storybook only), plus the rest of `LocalizationProviderProps` (minus `dateAdapter`) passed through.
 - No `fallback`/`onError` props — the caller supplies a `<Suspense fallback={...}>` boundary, and an Error Boundary if they want one; `use()` re-throws a rejected promise into the nearest Error Boundary automatically.
@@ -189,7 +196,7 @@ import TemporalLocalizationProvider from '@cxing/mui-temporal-adapter/TemporalLo
   <TemporalLocalizationProvider>
     <App />
   </TemporalLocalizationProvider>
-</Suspense>
+</Suspense>;
 ```
 
 Root-barrel form also works for either pattern: `import { createTemporalAdapter, TemporalLocalizationProvider } from '@cxing/mui-temporal-adapter';`
@@ -206,7 +213,7 @@ const [value, setValue] = useState(Temporal.Now.zonedDateTimeISO('America/New_Yo
   onChange={setValue}
   minDate={Temporal.PlainDate.from('2026-01-01')}
   maxDate={Temporal.PlainDate.from('2026-12-31')}
-/>
+/>;
 ```
 
 **Locale switching**: `<LocalizationProvider dateAdapter={AdapterTemporal} adapterLocale="fr-FR">`.
@@ -225,7 +232,7 @@ Three distinct artifacts, three distinct audiences/tones:
 
 ## Tooling configuration
 
-**`package.json`** — name `@cxing/mui-temporal-adapter`, `"type": "module"`, `sideEffects: false`, ESM-only multi-entry `exports` map (`import`+`types` only, no `require`/`main`), `publishConfig: { access: "public", provenance: true }`. `temporal-polyfill` as a real `dependency`; `react`, `react-dom`, `@mui/material`, `@mui/x-date-pickers` as `peerDependencies` (mirrored in `devDependencies`). Package manager: **pnpm** (`"packageManager"` field pinned via Corepack). Latest majors verified at scaffold time via `pnpm view <pkg> version` (research-time snapshot, Aug 2026: TypeScript 7.x, Vite 8.x, Vitest 4.x, ESLint 10.x + typescript-eslint 8.x, Prettier 3.9.x, Storybook 10.x, MUI X 9.x, MUI Material 9.x, React 19.x, `temporal-polyfill` 1.x, `vite-plugin-dts` 5.x, `@testing-library/*`, `eslint-plugin-jsdoc`).
+**`package.json`** — name `@cxing/mui-temporal-adapter`, `"type": "module"`, `sideEffects: false`, ESM-only `exports` map using a generic `"./*"` pattern mapped to flat `dist/*.js`/`dist/*.d.ts` files (`import`+`types` only, no `require`/`main`), so it doesn't need editing each time a new public module is added, `publishConfig: { access: "public", provenance: true }`. `temporal-polyfill` as a real `dependency`; `react`, `react-dom`, `@mui/material`, `@mui/x-date-pickers` as `peerDependencies` (mirrored in `devDependencies`). Package manager: **pnpm** (`"packageManager"` field pinned via Corepack). Latest majors verified at scaffold time via `pnpm view <pkg> version` (research-time snapshot, Aug 2026: TypeScript 7.x, Vite 8.x, Vitest 4.x, ESLint 10.x + typescript-eslint 8.x, Prettier 3.9.x, Storybook 10.x, MUI X 9.x, MUI Material 9.x, React 19.x, `temporal-polyfill` 1.x, `vite-plugin-dts` 5.x, `@testing-library/*`, `eslint-plugin-jsdoc`).
 
 No `require`/CJS `exports` condition anywhere — ESM-only, documented plainly in the README.
 
@@ -246,6 +253,7 @@ No `require`/CJS `exports` condition anywhere — ESM-only, documented plainly i
 **Husky**: `.husky/commit-msg` → `commitlint --edit "$1"` (message format, via `commitlint.config.js` extending `@commitlint/config-conventional`). `.husky/pre-commit` → `lint-staged` (ESLint `--fix` + Prettier `--write` on staged files, via `.lintstagedrc.json`). `package.json` `"prepare": "husky"`.
 
 **GitHub Actions — four workflows**:
+
 - `ci-checks.yml` (reusable, `workflow_call`) — typecheck, lint, `test:coverage` (unit+component, coverage-gated), build.
 - `validate.yml` (PR + manual) — calls `ci-checks.yml`; runs `test:storybook` separately (not coverage-gated); posts/updates a PR coverage comment via `davelosert/vitest-coverage-report-action` (PR events only).
 - `release.yml` (push to `main` + manual) — calls `ci-checks.yml`, then `pnpm run release` (`semantic-release`) via npm Trusted Publisher/OIDC (no `NPM_TOKEN` secret); `@semantic-release/git` commits `CHANGELOG.md` + version bump back with `[skip ci]`. (semantic-release's npm plugin talks to the npm registry directly regardless of pnpm being the local package manager.)

@@ -1,0 +1,41 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/6. How the Fallbacks Work" />
+
+# How the Fallbacks Work
+
+You don't need to understand any of this to use the package — it all happens automatically.
+This page is here for anyone curious what's actually going on behind the scenes.
+
+## The first gap: Temporal itself
+
+Temporal (the new built-in date/time toolkit this package is built on — see the
+[Introduction](/docs/docs-1-introduction--docs)) is still rolling out across browsers. Most
+current browsers already have it, but not all of them yet.
+
+When this package starts up, it checks: does this browser already have Temporal built in? If
+yes, it uses that directly — nothing extra happens. If no, it quietly fetches a small stand-in
+copy (called a **polyfill** — a piece of code that fills in a missing browser feature) and sets
+it up so it behaves exactly the same as if the browser had it natively. Either way, your code
+never has to check which case it is — you just use Temporal, and it's simply there.
+
+Because that stand-in copy is only fetched when it's actually needed, visitors on modern
+browsers never download it at all — there's no wasted cost for the common case.
+
+## The second gap: knowing which day a week starts on
+
+Separately, browsers have a way to ask "which day does the calendar week start on for this
+locale?" (see the [Locales & First Day of the Week](/docs/docs-4-locales-first-day-of-the-week--docs)
+page). This is a newer piece of browser support than Temporal itself, so even a browser with
+Temporal built in might not have this yet.
+
+The same pattern applies here: if the browser already knows the answer, this package asks it
+directly. If not, it quietly fetches a small built-in table with the same information instead,
+sourced from the same public reference data browsers themselves use for this.
+
+## Seeing it in action
+
+The **[Lazy Polyfill Environment](/docs/how-it-works-lazy-polyfill-environment--forced-polyfill)**
+stories in the sidebar deliberately pretend the browser is missing each of these, one at a
+time, so you can watch each fallback take over — and see that everything still works correctly
+either way.
