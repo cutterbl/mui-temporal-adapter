@@ -1,5 +1,5 @@
 import { getFirstDayOfWeek } from '../week-info/getFirstDayOfWeek';
-import { expandMacroToken, type MacroToken } from './expandFormat';
+import { expandMacroToken } from './expandFormat';
 import { tokenizeFormat } from './tokenizeFormat';
 
 /**
@@ -58,7 +58,11 @@ function getMeridiem(value: Temporal.ZonedDateTime, locale: string): string {
  * @returns The formatted text for just this one token.
  * @throws If `token` isn't a token this adapter understands.
  */
-export function formatByToken(value: Temporal.ZonedDateTime, token: string, locale: string): string {
+export function formatByToken(
+  value: Temporal.ZonedDateTime,
+  token: string,
+  locale: string,
+): string {
   switch (token) {
     case 'y':
       return String(value.year);
@@ -122,7 +126,7 @@ export function formatByToken(value: Temporal.ZonedDateTime, token: string, loca
       // digits stay plain ASCII (and overridable via `formatNumber()`) like every
       // other digit token, instead of a locale's native numbering system (e.g.
       // Arabic-Indic digits for `ar-SA`), which `parseByToken()` can't read back.
-      return tokenizeFormat(expandMacroToken(token as MacroToken, locale))
+      return tokenizeFormat(expandMacroToken(token, locale))
         .map((tok) => (tok.literal ? tok.value : formatByToken(value, tok.value, locale)))
         .join('');
     default:

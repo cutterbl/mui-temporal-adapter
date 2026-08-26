@@ -7,7 +7,10 @@ import type { TemporalAdapterConstructor, TemporalAdapterOptions } from '../crea
 /**
  * Props for {@link TemporalLocalizationProvider}.
  */
-export interface TemporalLocalizationProviderProps extends Omit<LocalizationProviderProps<string>, 'dateAdapter'> {
+export interface TemporalLocalizationProviderProps extends Omit<
+  LocalizationProviderProps<string>,
+  'dateAdapter'
+> {
   /**
    * Force the `temporal-polyfill` path even if the runtime already has native
    * `Temporal` support. Intended for tests and Storybook only — lets a story or test
@@ -101,5 +104,7 @@ export default function TemporalLocalizationProvider({
   ...localizationProviderProps
 }: TemporalLocalizationProviderProps) {
   const ResolvedAdapterTemporal = use(getAdapterPromise(forcePolyfill, forceWeekInfoFallback));
-  return <LocalizationProvider dateAdapter={ResolvedAdapterTemporal} {...localizationProviderProps} />;
+  return (
+    <LocalizationProvider dateAdapter={ResolvedAdapterTemporal} {...localizationProviderProps} />
+  );
 }

@@ -17,6 +17,9 @@ describe('week-info — native getWeekInfo available', () => {
   });
 
   it('resolves first-day-of-week straight from the native API, with no loading needed', async () => {
+    // `Intl.Locale.prototype.getWeekInfo` — verified false positive, see
+    // `src/week-info/hasNativeGetWeekInfo.ts`'s doc comment.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(typeof Intl.Locale.prototype.getWeekInfo).toBe('function');
 
     const { getFirstDayOfWeek } = await import('../../src/week-info/getFirstDayOfWeek');

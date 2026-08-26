@@ -54,9 +54,11 @@ function weekdayNames(locale: string, style: 'short' | 'long' | 'narrow'): strin
  * @returns The localized meridiem text (e.g. `'AM'`/`'PM'`, or a locale's own).
  */
 function meridiemText(locale: string, hour: number): string {
-  const parts = new Intl.DateTimeFormat(locale, { hour: 'numeric', hour12: true, timeZone: 'UTC' }).formatToParts(
-    new Date(Date.UTC(NAME_REFERENCE_YEAR, 0, 1, hour, 0, 0)),
-  );
+  const parts = new Intl.DateTimeFormat(locale, {
+    hour: 'numeric',
+    hour12: true,
+    timeZone: 'UTC',
+  }).formatToParts(new Date(Date.UTC(NAME_REFERENCE_YEAR, 0, 1, hour, 0, 0)));
   return parts.find((part) => part.type === 'dayPeriod')?.value ?? (hour < 12 ? 'AM' : 'PM');
 }
 
@@ -73,7 +75,10 @@ function matchCandidate(input: string, pos: number, candidates: string[]): strin
   const rest = input.slice(pos).toLowerCase();
   let best: string | null = null;
   for (const candidate of candidates) {
-    if (rest.startsWith(candidate.toLowerCase()) && (best === null || candidate.length > best.length)) {
+    if (
+      rest.startsWith(candidate.toLowerCase()) &&
+      (best === null || candidate.length > best.length)
+    ) {
       best = candidate;
     }
   }
@@ -119,7 +124,13 @@ function consumeDigits(
  *   `input` doesn't match what `token` expects at `pos`.
  * @throws If `token` isn't a token this adapter understands.
  */
-function consumeToken(token: string, input: string, pos: number, locale: string, fields: ParsedFields): number | null {
+function consumeToken(
+  token: string,
+  input: string,
+  pos: number,
+  locale: string,
+  fields: ParsedFields,
+): number | null {
   switch (token) {
     case 'yyyy':
     case 'y': {

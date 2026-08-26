@@ -52,7 +52,7 @@ describe('AdapterTemporal — getters/setters', () => {
       expect(adapter.getDate(constrained)).toBe(28);
     });
 
-    it('setDate constrains an out-of-range day to the month\'s last valid day', () => {
+    it("setDate constrains an out-of-range day to the month's last valid day", () => {
       const apr = adapter.date('2024-04-15T00:00:00Z', 'UTC'); // April has 30 days
       const constrained = adapter.setDate(apr, 31);
       expect(adapter.getDate(constrained)).toBe(30);

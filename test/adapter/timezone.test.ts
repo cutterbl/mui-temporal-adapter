@@ -86,9 +86,11 @@ describe('AdapterTemporal — timezone / date-builder / validity', () => {
       expect(adapter.getCurrentLocaleCode()).toBe('en-US');
     });
 
-    it('falls back to the runtime\'s default locale when none is given', async () => {
+    it("falls back to the runtime's default locale when none is given", async () => {
       const defaultAdapter = await buildAdapter();
-      expect(defaultAdapter.getCurrentLocaleCode()).toBe(Intl.DateTimeFormat().resolvedOptions().locale);
+      expect(defaultAdapter.getCurrentLocaleCode()).toBe(
+        Intl.DateTimeFormat().resolvedOptions().locale,
+      );
     });
   });
 });

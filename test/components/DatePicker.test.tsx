@@ -15,7 +15,10 @@ describe('DatePicker — real component + AdapterTemporal integration', () => {
 
     expect(screen.getByRole('spinbutton', { name: 'Month' })).toHaveAttribute('aria-valuenow', '6');
     expect(screen.getByRole('spinbutton', { name: 'Day' })).toHaveAttribute('aria-valuenow', '15');
-    expect(screen.getByRole('spinbutton', { name: 'Year' })).toHaveAttribute('aria-valuenow', '2024');
+    expect(screen.getByRole('spinbutton', { name: 'Year' })).toHaveAttribute(
+      'aria-valuenow',
+      '2024',
+    );
   });
 
   it('fires onChange with an updated AdapterTemporal value when a field section is incremented', async () => {

@@ -107,7 +107,9 @@ export async function ensureTemporal(opts?: { force?: boolean }) {
 // bespoke import from this package.
 export function getTemporal(): typeof Temporal {
   if (typeof globalThis.Temporal === 'undefined') {
-    throw new Error('[AdapterTemporal] await createTemporalAdapter() before rendering LocalizationProvider');
+    throw new Error(
+      '[AdapterTemporal] await createTemporalAdapter() before rendering LocalizationProvider',
+    );
   }
   return globalThis.Temporal;
 }
@@ -136,7 +138,7 @@ export function getFirstDayOfWeek(localeCode: string): number {
 ```ts
 // src/createTemporalAdapter.ts — own build entry / subpath: '@cxing/mui-temporal-adapter/createTemporalAdapter'
 export interface TemporalAdapterOptions {
-  forcePolyfill?: boolean;         // force the temporal-polyfill path — for tests/Storybook
+  forcePolyfill?: boolean; // force the temporal-polyfill path — for tests/Storybook
   forceWeekInfoFallback?: boolean; // force the static-table path — for tests/Storybook
   /** Default locale for the resolved AdapterTemporal class when constructed with no explicit
    *  `locale`/`adapterLocale`. Optional — omit to let AdapterTemporal fall back to
@@ -144,8 +146,11 @@ export interface TemporalAdapterOptions {
   locale?: string;
 }
 export type TemporalAdapterConstructor = new (options?: AdapterTemporalOptions) => AdapterTemporal;
-export default async function createTemporalAdapter(options?: TemporalAdapterOptions): Promise<TemporalAdapterConstructor>;
+export default async function createTemporalAdapter(
+  options?: TemporalAdapterOptions,
+): Promise<TemporalAdapterConstructor>;
 ```
+
 ```ts
 // src/index.ts — root barrel, subpath: '@cxing/mui-temporal-adapter'
 export { default as createTemporalAdapter } from './createTemporalAdapter';
@@ -155,9 +160,11 @@ export type { AdapterTemporalOptions } from './AdapterTemporal/AdapterTemporal.t
 export { default as TemporalLocalizationProvider } from './TemporalLocalizationProvider/TemporalLocalizationProvider';
 export type { TemporalLocalizationProviderProps } from './TemporalLocalizationProvider/TemporalLocalizationProvider';
 ```
+
 No bespoke `getTemporal()`/similar public accessor — once `createTemporalAdapter()` resolves, `Temporal` is guaranteed to exist as an ambient global, and consumer code is expected to reference `Temporal.*` directly, exactly as TC39/MDN document it.
 
 `TemporalLocalizationProvider` (`export default`, own build entry, subpath `'@cxing/mui-temporal-adapter/TemporalLocalizationProvider'`) — a thin wrapper around `createTemporalAdapter()` + `LocalizationProvider`, built on React 19's `use()` hook + `<Suspense>`:
+
 - A module-level `adapterPromise` singleton memoizes the `createTemporalAdapter()` call (required for `use()`'s stable-promise-reference contract); every mount anywhere in the app shares one resolution.
 - Props: `locale?: string` (forwarded to `LocalizationProvider`'s `adapterLocale`), `forcePolyfill?: boolean` and `forceWeekInfoFallback?: boolean` (testing/Storybook only), plus the rest of `LocalizationProviderProps` (minus `dateAdapter`) passed through.
 - No `fallback`/`onError` props — the caller supplies a `<Suspense fallback={...}>` boundary, and an Error Boundary if they want one; `use()` re-throws a rejected promise into the nearest Error Boundary automatically.
@@ -189,7 +196,7 @@ import TemporalLocalizationProvider from '@cxing/mui-temporal-adapter/TemporalLo
   <TemporalLocalizationProvider>
     <App />
   </TemporalLocalizationProvider>
-</Suspense>
+</Suspense>;
 ```
 
 Root-barrel form also works for either pattern: `import { createTemporalAdapter, TemporalLocalizationProvider } from '@cxing/mui-temporal-adapter';`
@@ -206,7 +213,7 @@ const [value, setValue] = useState(Temporal.Now.zonedDateTimeISO('America/New_Yo
   onChange={setValue}
   minDate={Temporal.PlainDate.from('2026-01-01')}
   maxDate={Temporal.PlainDate.from('2026-12-31')}
-/>
+/>;
 ```
 
 **Locale switching**: `<LocalizationProvider dateAdapter={AdapterTemporal} adapterLocale="fr-FR">`.
@@ -246,6 +253,7 @@ No `require`/CJS `exports` condition anywhere — ESM-only, documented plainly i
 **Husky**: `.husky/commit-msg` → `commitlint --edit "$1"` (message format, via `commitlint.config.js` extending `@commitlint/config-conventional`). `.husky/pre-commit` → `lint-staged` (ESLint `--fix` + Prettier `--write` on staged files, via `.lintstagedrc.json`). `package.json` `"prepare": "husky"`.
 
 **GitHub Actions — four workflows**:
+
 - `ci-checks.yml` (reusable, `workflow_call`) — typecheck, lint, `test:coverage` (unit+component, coverage-gated), build.
 - `validate.yml` (PR + manual) — calls `ci-checks.yml`; runs `test:storybook` separately (not coverage-gated); posts/updates a PR coverage comment via `davelosert/vitest-coverage-report-action` (PR events only).
 - `release.yml` (push to `main` + manual) — calls `ci-checks.yml`, then `pnpm run release` (`semantic-release`) via npm Trusted Publisher/OIDC (no `NPM_TOKEN` secret); `@semantic-release/git` commits `CHANGELOG.md` + version bump back with `[skip ci]`. (semantic-release's npm plugin talks to the npm registry directly regardless of pnpm being the local package manager.)

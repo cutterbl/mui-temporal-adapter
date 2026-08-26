@@ -11,12 +11,17 @@ describe('DateTimePicker — real component + AdapterTemporal integration', () =
     const adapter = new AdapterTemporalClass({ locale: 'en-US' });
     const value = adapter.date('2024-06-15T14:05:00Z', 'UTC');
 
-    await renderWithAdapter(<DateTimePicker value={value} label="Appointment" />, { adapterLocale: 'en-US' });
+    await renderWithAdapter(<DateTimePicker value={value} label="Appointment" />, {
+      adapterLocale: 'en-US',
+    });
 
     expect(screen.getByRole('spinbutton', { name: 'Month' })).toHaveAttribute('aria-valuenow', '6');
     expect(screen.getByRole('spinbutton', { name: 'Day' })).toHaveAttribute('aria-valuenow', '15');
     expect(screen.getByRole('spinbutton', { name: 'Hours' })).toHaveAttribute('aria-valuenow', '2');
-    expect(screen.getByRole('spinbutton', { name: 'Minutes' })).toHaveAttribute('aria-valuenow', '5');
+    expect(screen.getByRole('spinbutton', { name: 'Minutes' })).toHaveAttribute(
+      'aria-valuenow',
+      '5',
+    );
   });
 
   it('is timezone-aware: the same instant renders different local fields under a different timezone', async () => {
@@ -24,9 +29,12 @@ describe('DateTimePicker — real component + AdapterTemporal integration', () =
     const adapter = new AdapterTemporalClass({ locale: 'en-US' });
     const value = adapter.date('2024-06-15T23:30:00Z', 'UTC'); // 23:30 UTC -> next day in Tokyo
 
-    await renderWithAdapter(<DateTimePicker value={value} timezone="Asia/Tokyo" label="Appointment" />, {
-      adapterLocale: 'en-US',
-    });
+    await renderWithAdapter(
+      <DateTimePicker value={value} timezone="Asia/Tokyo" label="Appointment" />,
+      {
+        adapterLocale: 'en-US',
+      },
+    );
 
     expect(screen.getByRole('spinbutton', { name: 'Day' })).toHaveAttribute('aria-valuenow', '16');
     expect(screen.getByRole('spinbutton', { name: 'Hours' })).toHaveAttribute('aria-valuenow', '8'); // 23:30 UTC + 9h = 08:30 Tokyo
@@ -39,9 +47,12 @@ describe('DateTimePicker — real component + AdapterTemporal integration', () =
     const value = adapter.date('2024-06-15T14:05:00Z', 'UTC');
     const onChange = vi.fn();
 
-    await renderWithAdapter(<DateTimePicker value={value} onChange={onChange} label="Appointment" />, {
-      adapterLocale: 'en-US',
-    });
+    await renderWithAdapter(
+      <DateTimePicker value={value} onChange={onChange} label="Appointment" />,
+      {
+        adapterLocale: 'en-US',
+      },
+    );
 
     const minutesSection = screen.getByRole('spinbutton', { name: 'Minutes' });
     await user.click(minutesSection);

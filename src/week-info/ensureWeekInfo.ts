@@ -1,4 +1,5 @@
 import type { firstDayOfWeekByRegion } from './firstDayOfWeekTable';
+import { hasNativeGetWeekInfo } from './hasNativeGetWeekInfo';
 
 /**
  * The loaded fallback table, once (and if) it's been imported. Exported as
@@ -43,7 +44,7 @@ export async function ensureWeekInfo(opts?: { force?: boolean }): Promise<void> 
     forced = true;
   }
 
-  const hasNative = typeof Intl.Locale.prototype.getWeekInfo === 'function';
+  const hasNative = hasNativeGetWeekInfo();
   if (!forced && hasNative) {
     return;
   }

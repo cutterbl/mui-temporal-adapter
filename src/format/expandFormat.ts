@@ -3,6 +3,7 @@ import { tokenizeFormat } from './tokenizeFormat';
 
 /** The locale-macro tokens `expandFormat()` (and `formatByToken()`) know how to expand. */
 export const MACRO_TOKENS = ['D', 'DD', 'T'] as const;
+/** One of {@link MACRO_TOKENS} — a single locale-macro token. */
 export type MacroToken = (typeof MACRO_TOKENS)[number];
 
 /**
@@ -48,7 +49,8 @@ function quoteLiteral(value: string): string {
  */
 export function expandMacroToken(macro: MacroToken, locale: string): string {
   if (macro === 'T') {
-    const hour12 = new Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12 ?? false;
+    const hour12 =
+      new Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12 ?? false;
     const options: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12 };
     return partsToFormat(locale, options, (part) => {
       switch (part.type) {
@@ -111,8 +113,12 @@ function partsToFormat(
   tokenFor: (part: Intl.DateTimeFormatPart) => string,
 ): string {
   const reference = new Date(Date.UTC(1970, 0, 1, 1, 0, 0));
-  const parts = new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).formatToParts(reference);
-  return parts.map((part) => (part.type === 'literal' ? quoteLiteral(part.value) : tokenFor(part))).join('');
+  const parts = new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).formatToParts(
+    reference,
+  );
+  return parts
+    .map((part) => (part.type === 'literal' ? quoteLiteral(part.value) : tokenFor(part)))
+    .join('');
 }
 
 /**

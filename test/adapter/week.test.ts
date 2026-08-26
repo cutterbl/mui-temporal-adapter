@@ -47,15 +47,27 @@ describe('AdapterTemporal — week helpers', () => {
     it('bound the year, month, and day correctly', () => {
       const value = enUS.date('2024-06-12T15:30:45Z', 'UTC');
 
-      expect(enUS.formatByString(enUS.startOfYear(value), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-01-01 00:00:00');
-      expect(enUS.formatByString(enUS.startOfMonth(value), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-06-01 00:00:00');
-      expect(enUS.formatByString(enUS.startOfDay(value), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-06-12 00:00:00');
+      expect(enUS.formatByString(enUS.startOfYear(value), 'yyyy-MM-dd HH:mm:ss')).toBe(
+        '2024-01-01 00:00:00',
+      );
+      expect(enUS.formatByString(enUS.startOfMonth(value), 'yyyy-MM-dd HH:mm:ss')).toBe(
+        '2024-06-01 00:00:00',
+      );
+      expect(enUS.formatByString(enUS.startOfDay(value), 'yyyy-MM-dd HH:mm:ss')).toBe(
+        '2024-06-12 00:00:00',
+      );
 
       // endOf* is one nanosecond before the next boundary — formatting drops the sub-second
       // remainder, so it should read as 23:59:59 the day/month/year before the next one starts.
-      expect(enUS.formatByString(enUS.endOfDay(value), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-06-12 23:59:59');
-      expect(enUS.formatByString(enUS.endOfMonth(value), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-06-30 23:59:59');
-      expect(enUS.formatByString(enUS.endOfYear(value), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-12-31 23:59:59');
+      expect(enUS.formatByString(enUS.endOfDay(value), 'yyyy-MM-dd HH:mm:ss')).toBe(
+        '2024-06-12 23:59:59',
+      );
+      expect(enUS.formatByString(enUS.endOfMonth(value), 'yyyy-MM-dd HH:mm:ss')).toBe(
+        '2024-06-30 23:59:59',
+      );
+      expect(enUS.formatByString(enUS.endOfYear(value), 'yyyy-MM-dd HH:mm:ss')).toBe(
+        '2024-12-31 23:59:59',
+      );
     });
   });
 
@@ -87,7 +99,7 @@ describe('AdapterTemporal — week helpers', () => {
   });
 
   describe('getWeekArray', () => {
-    it('builds a full calendar grid, in complete 7-day weeks, respecting the locale\'s first day', () => {
+    it("builds a full calendar grid, in complete 7-day weeks, respecting the locale's first day", () => {
       const juneEn = enUS.date('2024-06-15T00:00:00Z', 'UTC');
       const weeksEn = enUS.getWeekArray(juneEn);
 

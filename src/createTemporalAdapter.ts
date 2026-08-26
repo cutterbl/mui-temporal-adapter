@@ -65,7 +65,9 @@ export default async function createTemporalAdapter(
 
   await Promise.all([
     ensureTemporal(forcePolyfill === undefined ? undefined : { force: forcePolyfill }),
-    ensureWeekInfo(forceWeekInfoFallback === undefined ? undefined : { force: forceWeekInfoFallback }),
+    ensureWeekInfo(
+      forceWeekInfoFallback === undefined ? undefined : { force: forceWeekInfoFallback },
+    ),
   ]);
 
   if (factoryDefaultLocale === undefined) {

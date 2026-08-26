@@ -1,4 +1,5 @@
 import { fallbackTable, forced } from './ensureWeekInfo';
+import { hasNativeGetWeekInfo } from './hasNativeGetWeekInfo';
 
 // Deliberately *not* imported from `firstDayOfWeekTable.ts` (even though that module
 // also documents this same value) — `ensureWeekInfo.ts` only reaches that module via a
@@ -30,7 +31,7 @@ const DEFAULT_FIRST_DAY = 1;
  * ```
  */
 export function getFirstDayOfWeek(localeCode: string): number {
-  const hasNative = typeof Intl.Locale.prototype.getWeekInfo === 'function';
+  const hasNative = hasNativeGetWeekInfo();
 
   if (hasNative && !forced) {
     return new Intl.Locale(localeCode).getWeekInfo().firstDay;

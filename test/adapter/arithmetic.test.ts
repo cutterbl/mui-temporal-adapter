@@ -18,7 +18,9 @@ describe('AdapterTemporal — arithmetic', () => {
 
   it('addHours / addMinutes / addSeconds add straightforwardly, including negative amounts', () => {
     const base = adapter.date('2024-06-15T10:30:15Z', 'UTC');
-    expect(adapter.formatByString(adapter.addHours(base, 15), 'yyyy-MM-dd HH:mm:ss')).toBe('2024-06-16 01:30:15');
+    expect(adapter.formatByString(adapter.addHours(base, 15), 'yyyy-MM-dd HH:mm:ss')).toBe(
+      '2024-06-16 01:30:15',
+    );
     expect(adapter.formatByString(adapter.addMinutes(base, 45), 'HH:mm:ss')).toBe('11:15:15');
     expect(adapter.formatByString(adapter.addSeconds(base, -20), 'HH:mm:ss')).toBe('10:29:55');
   });

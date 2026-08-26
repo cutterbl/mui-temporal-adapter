@@ -5,6 +5,7 @@ step is actually completed and verified — this file is always meant to be an a
 "where are we." Work pauses at the end of each Milestone for review before the next one starts.
 
 ## Milestone 0 — Scaffold
+
 - [x] Create `./memory/{PLAN.md,DECISIONS.md,PROGRESS.md}`
 - [x] `git init`, initial `.gitignore`, remote `origin` → github.com/cutterbl/mui-temporal-adapter, initial commit pushed to `main`, work continuing on branch `feat/initial-implementation`
 - [x] `pnpm init` — base `package.json` (name `@cxing/mui-temporal-adapter`, type: module, `packageManager` pinned to pnpm@11.9.0, ESM-only `exports` map scaffolded, scripts stubbed)
@@ -13,6 +14,7 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] Resolve global `Temporal` typing spike — **resolved**: TS 7.0.2's bundled `ESNext` lib already ships ambient `Temporal` global types natively, no ambient `.d.ts` needed from this package; logged in `DECISIONS.md`
 
 ## Milestone 1 — Feature-detection / lazy-load modules
+
 - [x] `src/temporal-runtime/ensureTemporal.ts` + `getTemporal.ts`
 - [x] Unit tests: native-Temporal-present path (`test/temporal-runtime/ensureTemporal.native.test.ts`)
 - [x] Unit tests: native-Temporal-absent → lazy polyfill import path (`ensureTemporal.polyfill.test.ts`) — found & fixed a real bug: `force` must delete the global first, since temporal-polyfill's installer treats any existing `globalThis.Temporal` as native (logged in `DECISIONS.md`)
@@ -23,6 +25,7 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] `tsc --noEmit` and `vitest run --project unit` both clean (4 files, 8 tests passing)
 
 ## Milestone 2 — `AdapterTemporal` core
+
 - [x] `AdapterTemporal.types.ts`, `defaults.ts` (formats, escapedCharacters, formatTokenMap)
 - [x] Constructor (locale default resolution, `iso8601` calendar)
 - [x] Date builder / timezone methods (`date`, `getTimezone`, `setTimezone`, `toJsDate`) — plus
@@ -44,13 +47,14 @@ step is actually completed and verified — this file is always meant to be an a
       itemized in this checklist; added now since `AdapterTemporal` alone isn't part of the intended
       public API and couldn't be smoke-tested end-to-end without the factory; see `DECISIONS.md`
 - [x] Real bug found & fixed via an end-to-end smoke test (not committed): `ensureTemporal`'s
-      `force` path (Milestone 1) still silently failed on a *second* forced call in the same
+      `force` path (Milestone 1) still silently failed on a _second_ forced call in the same
       process — superseded with a more robust fix (installs from `temporal-polyfill/implementation`
       directly rather than depending on the self-installing `/global` entry's one-time side effect);
       see `DECISIONS.md`. Milestone 1's two `ensureTemporal` test files updated accordingly (still
       passing); `tsc --noEmit` and `vitest run --project unit` both clean (4 files, 8 tests)
 
 ## Milestone 3 — Format/parse token engine
+
 - [x] `src/format/tokenizeFormat.ts` — literal/token lexer (quoted-literal handling,
       `''` escape), locale-independent
 - [x] `src/format/fieldTokens.ts` — shared `SUPPORTED_FIELD_TOKENS` set, split out from
@@ -73,6 +77,7 @@ step is actually completed and verified — this file is always meant to be an a
       `vitest run --project unit` both clean (4 files, 8 tests)
 
 ## Milestone 4 — Vite multi-entry library build
+
 - [x] Author `src/TemporalLocalizationProvider/TemporalLocalizationProvider.tsx` (`use()` +
       `<Suspense>` wrapper, per `PLAN.md`) — not originally itemized anywhere in Milestones 0–4; it
       needs to exist before this milestone's build-entry map can reference it, even though its own
@@ -102,13 +107,14 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] Verified `es2024` target in emitted output (no TS downlevel helpers present in any built chunk)
 
 ## Milestone 5 — Full Vitest suite
+
 - [x] `test/adapter/getters-setters.test.ts` — getters, per-field setters, `setMonth`/`setYear`/
       `setDate` overflow-constrain edge cases (Jan 31 → Feb 29/28, Feb 29 → non-leap year)
 - [x] `test/adapter/arithmetic.test.ts` — `addYears`…`addSeconds`, negative amounts,
       `addMonths`/`addYears` constrain behavior
 - [x] `test/adapter/comparisons.test.ts` — `isEqual`, `isSame*`, `isAfter*`/`isBefore*`,
       `isWithinRange`; a dedicated test proves `isSameDay` projects `comparing` into the
-      *reference* date's own timezone (Tokyo, fixed +09:00, no DST) rather than its own
+      _reference_ date's own timezone (Tokyo, fixed +09:00, no DST) rather than its own
 - [x] `test/adapter/formatting.test.ts` — every `format`/`formatByString`/`parse`/`expandFormat`
       token (digit, name, macro), `formats` overrides, literal-quoting incl. an unterminated
       quote and a standalone `''`, malformed-input null cases, 12-hour AM/PM boundary math,
@@ -121,8 +127,7 @@ step is actually completed and verified — this file is always meant to be an a
 - [x] `test/createTemporalAdapter.test.ts` + `test/temporal-runtime/getTemporal.test.ts` — not
       originally itemized; added to close real coverage gaps (factory-level default-locale
       layering, `getTemporal()`'s not-yet-available throw); see `DECISIONS.md`
-- [x] `test/components/*.test.tsx` (Testing Library, real `LocalizationProvider` + MUI X pickers
-      + `AdapterTemporal`, jsdom): `DateCalendar` (locale-aware week-start ordering, both native
+- [x] `test/components/*.test.tsx` (Testing Library, real `LocalizationProvider` + MUI X pickers + `AdapterTemporal`, jsdom): `DateCalendar` (locale-aware week-start ordering, both native
       and `forceWeekInfoFallback`), `DatePicker`/`TimePicker`/`DateTimePicker` (field rendering,
       keyboard interaction + `onChange`, timezone-awareness), `TemporalLocalizationProvider`
       (`use()`/`<Suspense>` resolution, `forcePolyfill`, `forceWeekInfoFallback`) — `vitest.config.ts`
@@ -141,14 +146,43 @@ step is actually completed and verified — this file is always meant to be an a
       18 test files, 93 tests passing
 
 ## Milestone 6 — Lint/format
-- [ ] `eslint.config.js` authored (no jsx-a11y); explicitly set
+
+- [x] Real blocker hit and resolved (user-confirmed): `typescript-eslint@8.68.0` hard-throws
+      against TypeScript 7.x (own peer range caps at `<6.1.0`, upstream issue still open, no
+      fix available via pnpm `overrides`/`packageExtensions`/`patch` — all tried and failed to
+      redirect the nested peer resolution). Project's `typescript` devDependency downgraded
+      `^7.0.2` → `^6.0.3` (verified: identical ambient `Temporal` typing); the
+      `@typescript/typescript6` fallback devDependency added in Milestone 4 for
+      `unplugin-dts` is no longer needed and was removed. Full writeup in `DECISIONS.md`.
+- [x] `eslint.config.js` authored (no jsx-a11y); explicitly sets
       `'@typescript-eslint/no-explicit-any': 'error'` (don't rely on preset defaults) — user
-      directive, `any` must never be used, enforced not just conventional; see `DECISIONS.md`
-- [ ] `.prettierrc.json` / `.prettierignore` authored
-- [ ] `pnpm lint` clean across `src/`, `test/`, `stories/`
-- [ ] `pnpm format -- --check` clean
+      directive, `any` must never be used, enforced not just conventional; see `DECISIONS.md`.
+      Base: `@eslint/js` recommended + `typescript-eslint`'s `recommendedTypeChecked` (scoped
+      to `**/*.{ts,tsx}` via the `files`+`extends` pattern, not spread unscoped — see
+      `DECISIONS.md`); `eslint-plugin-react`/`react-hooks` for `.tsx`/`stories/**`;
+      `eslint-plugin-storybook`'s `flat/recommended` for `stories/**`/`.storybook/**` (wired
+      ahead of Milestone 7); `eslint-plugin-jsdoc` enforcing the Documentation standard from
+      `PLAN.md` across `src/**`, with `jsdoc/require-example` scoped to the three public-API
+      entry files; `eslint-config-prettier` last
+- [x] Real bug found via `eslint-plugin-react`'s own `settings.react.version: 'detect'`
+      crashing under ESLint 10 (`context.getFilename()` removed) — worked around by
+      hardcoding the installed React version instead; see `DECISIONS.md`
+- [x] `.prettierrc.json` / `.prettierignore` authored (plan's stated baseline)
+- [x] `pnpm lint` clean across `src/`, `test/` (`stories/` doesn't exist yet — Milestone 7)
+- [x] `pnpm format` run repo-wide (24 files reformatted — nothing had been Prettier-formatted
+      before this milestone); `pnpm format:check` now clean
+- [x] Small real fixes surfaced by lint actually running for the first time: a missing JSDoc
+      description on `AdapterTemporal`'s constructor and on `MacroToken`; an unnecessary `as
+MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
+      already); a verified `@typescript-eslint/no-unsafe-member-access` false positive on
+      `Intl.Locale.prototype.getWeekInfo` (constructor `.prototype` access, TS 6.x
+      `esnext.intl` lib quirk — cross-checked against a direct `tsc` probe), isolated into
+      `src/week-info/hasNativeGetWeekInfo.ts` with one documented, justified disable
+- [x] `tsc --noEmit`, `pnpm test` (93 tests), `pnpm build` all re-verified clean after the
+      `typescript` downgrade and every lint/format fix
 
 ## Milestone 7 — Storybook
+
 - [ ] `.storybook/main.ts` / `preview.tsx` / `vitest.setup.ts`
 - [ ] `DatePicker.stories.tsx`
 - [ ] `TimePicker.stories.tsx`
@@ -166,12 +200,14 @@ step is actually completed and verified — this file is always meant to be an a
 - [ ] Vitest `storybook` project wired; `pnpm test:storybook` runs stories as real assertions
 
 ## Milestone 8 — README + packaging smoke test
+
 - [ ] `README.md` (usage, async-factory rationale, browser support matrix, ESM-only note)
 - [ ] `pnpm pack` + install into a scratch Vite+React app
 - [ ] Confirm subpath default-export imports work
 - [ ] Confirm root-barrel named-export imports work
 
 ## Milestone 9 — Commit hygiene + CI/CD
+
 - [ ] `commitlint.config.js`
 - [ ] `.lintstagedrc.json`
 - [ ] `.husky/commit-msg`, `.husky/pre-commit`, `package.json` `prepare` script
@@ -186,6 +222,7 @@ step is actually completed and verified — this file is always meant to be an a
 - [ ] Throwaway PR opened to confirm the full loop end-to-end (see Verification in `PLAN.md`)
 
 ## Milestone 10 — Documentation consistency pass
+
 - [ ] Re-read all 8 MDX pages back-to-back for undefined jargon/acronyms and tone drift
 - [ ] Spot-check JSDoc renders sensibly in editor tooltips
 - [ ] Spot-check JSDoc renders sensibly in Storybook autodocs prop tables

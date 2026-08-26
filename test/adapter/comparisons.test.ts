@@ -45,7 +45,7 @@ describe('AdapterTemporal — comparisons', () => {
       expect(adapter.isSameHour(value, adapter.date('2024-06-15T11:30:00Z', 'UTC'))).toBe(false);
     });
 
-    it('project `comparing` into the *reference* date\'s own timezone, not its own', () => {
+    it("project `comparing` into the *reference* date's own timezone, not its own", () => {
       // value: 2024-06-16T00:30:00+09:00[Asia/Tokyo] == instant 2024-06-15T15:30:00Z.
       // Tokyo has no DST, so its offset is a fixed +09:00 year-round — safe to hardcode.
       const value = adapter.date('2024-06-16T00:30:00+09:00', 'Asia/Tokyo');
@@ -77,7 +77,7 @@ describe('AdapterTemporal — comparisons', () => {
   });
 
   describe('isAfterYear / isBeforeYear', () => {
-    it('compare only the year, in the reference date\'s timezone', () => {
+    it("compare only the year, in the reference date's timezone", () => {
       const value = adapter.date('2024-06-15T00:00:00Z', 'UTC');
       const laterYear = adapter.date('2025-01-01T00:00:00Z', 'UTC');
       const earlierYear = adapter.date('2023-12-31T00:00:00Z', 'UTC');

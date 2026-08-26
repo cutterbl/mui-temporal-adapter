@@ -13,7 +13,10 @@ describe('TimePicker — real component + AdapterTemporal integration', () => {
     await renderWithAdapter(<TimePicker value={value} label="Time" />, { adapterLocale: 'en-US' });
 
     expect(screen.getByRole('spinbutton', { name: 'Hours' })).toHaveAttribute('aria-valuenow', '2');
-    expect(screen.getByRole('spinbutton', { name: 'Minutes' })).toHaveAttribute('aria-valuenow', '5');
+    expect(screen.getByRole('spinbutton', { name: 'Minutes' })).toHaveAttribute(
+      'aria-valuenow',
+      '5',
+    );
     expect(screen.getByRole('spinbutton', { name: 'Meridiem' })).toHaveTextContent('PM');
   });
 
@@ -24,7 +27,10 @@ describe('TimePicker — real component + AdapterTemporal integration', () => {
 
     await renderWithAdapter(<TimePicker value={value} label="Heure" />, { adapterLocale: 'fr-FR' });
 
-    expect(screen.getByRole('spinbutton', { name: 'Hours' })).toHaveAttribute('aria-valuenow', '14');
+    expect(screen.getByRole('spinbutton', { name: 'Hours' })).toHaveAttribute(
+      'aria-valuenow',
+      '14',
+    );
     expect(screen.queryByRole('spinbutton', { name: 'Meridiem' })).not.toBeInTheDocument();
   });
 });

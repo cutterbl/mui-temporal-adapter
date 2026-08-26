@@ -50,6 +50,8 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
   public formatTokenMap: FieldFormatTokenMap = formatTokenMap;
 
   /**
+   * Constructs a new `AdapterTemporal`. Don't call this directly — see the class-level
+   * doc comment above for why.
    * @param options - Optional locale/formats overrides.
    * @param options.locale - A BCP 47 locale tag, e.g. `'fr-FR'`. Defaults to the
    *   runtime's own default locale (`Intl.DateTimeFormat().resolvedOptions().locale`)
@@ -148,8 +150,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param timezone - The timezone to convert the date to.
    * @returns The converted date.
    */
-  public setTimezone = (value: Temporal.ZonedDateTime, timezone: PickersTimezone): Temporal.ZonedDateTime =>
-    value.withTimeZone(resolveZone(timezone));
+  public setTimezone = (
+    value: Temporal.ZonedDateTime,
+    timezone: PickersTimezone,
+  ): Temporal.ZonedDateTime => value.withTimeZone(resolveZone(timezone));
 
   /**
    * Converts a date to a JavaScript `Date` object. This is an intentionally lossy
@@ -264,7 +268,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the two dates are equal.
    */
-  public isEqual = (value: Temporal.ZonedDateTime | null, comparing: Temporal.ZonedDateTime | null): boolean => {
+  public isEqual = (
+    value: Temporal.ZonedDateTime | null,
+    comparing: Temporal.ZonedDateTime | null,
+  ): boolean => {
     if (value === null && comparing === null) {
       return true;
     }
@@ -281,7 +288,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the two dates are in the same year.
    */
-  public isSameYear = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isSameYear = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return value.year === c.year;
   };
@@ -293,7 +303,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the two dates are in the same month.
    */
-  public isSameMonth = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isSameMonth = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return value.year === c.year && value.month === c.month;
   };
@@ -305,7 +318,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the two dates are on the same day.
    */
-  public isSameDay = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isSameDay = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return value.year === c.year && value.month === c.month && value.day === c.day;
   };
@@ -317,9 +333,17 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the two dates are at the same hour.
    */
-  public isSameHour = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isSameHour = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
-    return value.year === c.year && value.month === c.month && value.day === c.day && value.hour === c.hour;
+    return (
+      value.year === c.year &&
+      value.month === c.month &&
+      value.day === c.day &&
+      value.hour === c.hour
+    );
   };
 
   /**
@@ -338,7 +362,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the year of `value` is after the year of `comparing`.
    */
-  public isAfterYear = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isAfterYear = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return value.year > c.year;
   };
@@ -350,7 +377,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the day of `value` is after the day of `comparing`.
    */
-  public isAfterDay = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isAfterDay = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return getTemporal().PlainDate.compare(value.toPlainDate(), c.toPlainDate()) > 0;
   };
@@ -371,7 +401,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the year of `value` is before the year of `comparing`.
    */
-  public isBeforeYear = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isBeforeYear = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return value.year < c.year;
   };
@@ -383,7 +416,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param comparing - The date to compare with the reference date.
    * @returns `true` if the day of `value` is before the day of `comparing`.
    */
-  public isBeforeDay = (value: Temporal.ZonedDateTime, comparing: Temporal.ZonedDateTime): boolean => {
+  public isBeforeDay = (
+    value: Temporal.ZonedDateTime,
+    comparing: Temporal.ZonedDateTime,
+  ): boolean => {
     const c = this.setTimezone(comparing, this.getTimezone(value));
     return getTemporal().PlainDate.compare(value.toPlainDate(), c.toPlainDate()) < 0;
   };
@@ -397,7 +433,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
   public isWithinRange = (
     value: Temporal.ZonedDateTime,
     [start, end]: [Temporal.ZonedDateTime, Temporal.ZonedDateTime],
-  ): boolean => this.isEqual(value, start) || this.isEqual(value, end) || (this.isAfter(value, start) && this.isBefore(value, end));
+  ): boolean =>
+    this.isEqual(value, start) ||
+    this.isEqual(value, end) ||
+    (this.isAfter(value, start) && this.isBefore(value, end));
 
   // ---------------------------------------------------------------------------------
   // Boundaries
@@ -446,7 +485,9 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @returns The end of the year of the given date.
    */
   public endOfYear = (value: Temporal.ZonedDateTime): Temporal.ZonedDateTime =>
-    this.startOfYear(value).add({ years: 1 }, { overflow: 'constrain' }).subtract({ nanoseconds: 1 });
+    this.startOfYear(value)
+      .add({ years: 1 }, { overflow: 'constrain' })
+      .subtract({ nanoseconds: 1 });
 
   /**
    * Returns the end of the month for the given date.
@@ -454,7 +495,9 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @returns The end of the month of the given date.
    */
   public endOfMonth = (value: Temporal.ZonedDateTime): Temporal.ZonedDateTime =>
-    this.startOfMonth(value).add({ months: 1 }, { overflow: 'constrain' }).subtract({ nanoseconds: 1 });
+    this.startOfMonth(value)
+      .add({ months: 1 }, { overflow: 'constrain' })
+      .subtract({ nanoseconds: 1 });
 
   /**
    * Returns the end of the week for the given date, in this adapter's locale. See
@@ -463,7 +506,9 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @returns The end of the week of the given date.
    */
   public endOfWeek = (value: Temporal.ZonedDateTime): Temporal.ZonedDateTime =>
-    this.startOfWeek(value).add({ days: 7 }, { overflow: 'constrain' }).subtract({ nanoseconds: 1 });
+    this.startOfWeek(value)
+      .add({ days: 7 }, { overflow: 'constrain' })
+      .subtract({ nanoseconds: 1 });
 
   /**
    * Returns the end of the day for the given date.
@@ -667,8 +712,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param milliseconds - The new milliseconds.
    * @returns The new date with the milliseconds set.
    */
-  public setMilliseconds = (value: Temporal.ZonedDateTime, milliseconds: number): Temporal.ZonedDateTime =>
-    value.with({ millisecond: milliseconds }, { overflow: 'constrain' });
+  public setMilliseconds = (
+    value: Temporal.ZonedDateTime,
+    milliseconds: number,
+  ): Temporal.ZonedDateTime => value.with({ millisecond: milliseconds }, { overflow: 'constrain' });
 
   // ---------------------------------------------------------------------------------
   // Week helpers
@@ -738,7 +785,10 @@ export default class AdapterTemporal implements MuiPickersAdapter<string> {
    * @param range - The `[start, end]` range of years to create.
    * @returns The list of years in the range, each the start of its year.
    */
-  public getYearRange = ([start, end]: [Temporal.ZonedDateTime, Temporal.ZonedDateTime]): Temporal.ZonedDateTime[] => {
+  public getYearRange = ([start, end]: [
+    Temporal.ZonedDateTime,
+    Temporal.ZonedDateTime,
+  ]): Temporal.ZonedDateTime[] => {
     const startDate = this.startOfYear(start);
     const endDate = this.endOfYear(end);
     const years: Temporal.ZonedDateTime[] = [];

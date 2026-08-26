@@ -47,16 +47,20 @@ describe('DateCalendar — locale-aware week-start ordering', () => {
     expect(headers[0]).toBe(expectedWeekdayHeaderLabels('fr-FR', 1)[0]);
   });
 
-  it('positions the 1st of the month in the grid column matching the locale\'s first day of the week', async () => {
+  it("positions the 1st of the month in the grid column matching the locale's first day of the week", async () => {
     const AdapterTemporalClass = await createTemporalAdapter();
     const adapter = new AdapterTemporalClass({ locale: 'fr-FR' });
     // June 1 2024 is a Saturday (ISO dayOfWeek 6); fr-FR's week starts Monday (firstDay 1),
     // so the 1st should land in column ((6 - 1 + 7) % 7) + 1 = 6.
     const referenceDate = adapter.date('2024-06-15T00:00:00Z', 'UTC');
 
-    await renderWithAdapter(<DateCalendar referenceDate={referenceDate} />, { adapterLocale: 'fr-FR' });
+    await renderWithAdapter(<DateCalendar referenceDate={referenceDate} />, {
+      adapterLocale: 'fr-FR',
+    });
 
-    const dayButtons = screen.getAllByRole('gridcell').filter((el) => el.hasAttribute('data-timestamp'));
+    const dayButtons = screen
+      .getAllByRole('gridcell')
+      .filter((el) => el.hasAttribute('data-timestamp'));
     const firstDayButton = dayButtons[0]!;
     expect(firstDayButton).toHaveTextContent('1');
     expect(firstDayButton.getAttribute('aria-colindex')).toBe('6');
@@ -76,7 +80,10 @@ describe('DateCalendar — locale-aware week-start ordering', () => {
  */
 describe('DateCalendar — forceWeekInfoFallback', () => {
   it('still renders Monday-first for fr-FR via the fallback table', async () => {
-    await renderWithAdapter(<DateCalendar />, { adapterLocale: 'fr-FR', forceWeekInfoFallback: true });
+    await renderWithAdapter(<DateCalendar />, {
+      adapterLocale: 'fr-FR',
+      forceWeekInfoFallback: true,
+    });
 
     const headers = screen.getAllByRole('columnheader').map((el) => el.getAttribute('aria-label'));
     expect(headers).toEqual(expectedWeekdayHeaderLabels('fr-FR', 1)); // fr-FR is Monday-first

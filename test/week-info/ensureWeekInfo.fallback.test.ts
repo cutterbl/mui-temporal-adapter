@@ -6,6 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * table, and that `getFirstDayOfWeek()` then resolves correctly from it.
  */
 describe('week-info — no native getWeekInfo support', () => {
+  // `Intl.Locale.prototype.getWeekInfo` resolves to `any` in typescript-eslint's checker
+  // specifically for `.prototype` access under TS 6.x's `esnext.intl` lib — a verified false
+  // positive (`tsc` itself resolves the real, non-`any` `WeekInfo`-returning type correctly);
+  // see `src/week-info/hasNativeGetWeekInfo.ts`'s doc comment for the full explanation.
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- see above */
   const originalGetWeekInfo = Intl.Locale.prototype.getWeekInfo;
 
   beforeEach(() => {
@@ -17,6 +22,7 @@ describe('week-info — no native getWeekInfo support', () => {
   afterEach(() => {
     Intl.Locale.prototype.getWeekInfo = originalGetWeekInfo;
   });
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
   it('lazily loads the fallback table and resolves correctly from it', async () => {
     const { ensureWeekInfo } = await import('../../src/week-info/ensureWeekInfo');
@@ -65,6 +71,9 @@ describe('week-info — forced fallback even with native support present', () =>
   });
 
   it('uses the fallback table and never touches the native method when forced', async () => {
+    // `Intl.Locale.prototype.getWeekInfo` — verified false positive, see
+    // `src/week-info/hasNativeGetWeekInfo.ts`'s doc comment.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(typeof Intl.Locale.prototype.getWeekInfo).toBe('function');
 
     const { ensureWeekInfo } = await import('../../src/week-info/ensureWeekInfo');

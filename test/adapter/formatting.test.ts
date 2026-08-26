@@ -44,12 +44,12 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
       expect(enUS.formatByString(value, 's')).toBe('7');
     });
 
-    it('throws for a token it doesn\'t understand', () => {
+    it("throws for a token it doesn't understand", () => {
       const value = enUS.date('2024-03-05T00:00:00Z', 'UTC');
       expect(() => enUS.formatByString(value, 'q')).toThrow(/Unsupported format token/);
     });
 
-    it('a standalone \'\' (escaped apostrophe, on its own) renders as one literal apostrophe', () => {
+    it("a standalone '' (escaped apostrophe, on its own) renders as one literal apostrophe", () => {
       const value = enUS.date('2024-03-05T00:00:00Z', 'UTC');
       expect(enUS.formatByString(value, "''")).toBe("'");
     });
@@ -69,12 +69,14 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
       expect(enUS.formatByString(value, 'EEEE')).toBe(expectedWeekday);
 
       const frValue = frFR.date('2024-03-05T00:00:00Z', 'UTC');
-      expect(frFR.formatByString(frValue, 'MMMM')).toBe(frValue.toLocaleString('fr-FR', { month: 'long' }));
+      expect(frFR.formatByString(frValue, 'MMMM')).toBe(
+        frValue.toLocaleString('fr-FR', { month: 'long' }),
+      );
     });
   });
 
   describe('format() — named formats', () => {
-    it('formats using the adapter\'s configured named formats', () => {
+    it("formats using the adapter's configured named formats", () => {
       const value = enUS.date('2024-03-05T09:08:00Z', 'UTC');
       expect(enUS.format(value, 'year')).toBe('2024');
       expect(enUS.format(value, 'fullTime24h')).toBe('09:08');
@@ -102,7 +104,7 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
   });
 
   describe('expandFormat', () => {
-    it('expands D/DD/T into this locale\'s own field order, round-trippable by parse()', () => {
+    it("expands D/DD/T into this locale's own field order, round-trippable by parse()", () => {
       const value = enUS.date('2024-03-05T14:30:00', 'system');
 
       const dExpanded = enUS.expandFormat('D');
@@ -126,7 +128,9 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
       // other Luxon-style token engine.)
       const value = enUS.date('2024-03-05T09:08:00Z', 'UTC');
       const expanded = enUS.expandFormat('foo HH:mm');
-      expect(enUS.formatByString(value, expanded)).toBe(`foo ${enUS.formatByString(value, 'HH:mm')}`);
+      expect(enUS.formatByString(value, expanded)).toBe(
+        `foo ${enUS.formatByString(value, 'HH:mm')}`,
+      );
     });
   });
 
@@ -144,7 +148,7 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
       expect(enUS.parse('', 'yyyy-MM-dd')).toBeNull();
     });
 
-    it('returns null when the input doesn\'t match the format', () => {
+    it("returns null when the input doesn't match the format", () => {
       expect(enUS.parse('not a date', 'yyyy-MM-dd')).toBeNull();
       expect(enUS.parse('2024-13-40', 'yyyy-MM-dd')).toBeNull(); // out-of-range, overflow: 'reject'
     });
@@ -181,7 +185,10 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
       for (const token of tokens) {
         const formatted = enUS.formatByString(value, token);
         const parsed = enUS.parse(formatted, token);
-        expect(parsed, `token "${token}" (formatted "${formatted}") should parse back`).not.toBeNull();
+        expect(
+          parsed,
+          `token "${token}" (formatted "${formatted}") should parse back`,
+        ).not.toBeNull();
       }
     });
 
@@ -228,7 +235,7 @@ describe('AdapterTemporal — format / parse / expandFormat', () => {
   });
 
   describe('is12HourCycleInCurrentLocale / formatNumber', () => {
-    it('reports the locale\'s own hour-cycle preference', () => {
+    it("reports the locale's own hour-cycle preference", () => {
       expect(enUS.is12HourCycleInCurrentLocale()).toBe(true);
       expect(frFR.is12HourCycleInCurrentLocale()).toBe(false);
     });

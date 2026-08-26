@@ -25,7 +25,9 @@ export const INVALID_DATE_SENTINEL_EPOCH_MS = -8_640_000_000_000_000;
  * @returns The sentinel `Temporal.ZonedDateTime`, always in the `'UTC'` zone.
  */
 export function createInvalidDate(): Temporal.ZonedDateTime {
-  return getTemporal().Instant.fromEpochMilliseconds(INVALID_DATE_SENTINEL_EPOCH_MS).toZonedDateTimeISO('UTC');
+  return getTemporal()
+    .Instant.fromEpochMilliseconds(INVALID_DATE_SENTINEL_EPOCH_MS)
+    .toZonedDateTimeISO('UTC');
 }
 
 /**
@@ -35,7 +37,9 @@ export function createInvalidDate(): Temporal.ZonedDateTime {
  * @param value - The value to check.
  * @returns `true` if `value` is a valid, usable date.
  */
-export function isValidZonedDateTime(value: Temporal.ZonedDateTime | null): value is Temporal.ZonedDateTime {
+export function isValidZonedDateTime(
+  value: Temporal.ZonedDateTime | null,
+): value is Temporal.ZonedDateTime {
   if (value === null) {
     return false;
   }

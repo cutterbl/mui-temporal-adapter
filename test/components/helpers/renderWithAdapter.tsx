@@ -3,7 +3,10 @@ import { render } from '@testing-library/react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import type { LocalizationProviderProps } from '@mui/x-date-pickers/LocalizationProvider';
 import createTemporalAdapter from '../../../src/createTemporalAdapter';
-import type { TemporalAdapterConstructor, TemporalAdapterOptions } from '../../../src/createTemporalAdapter';
+import type {
+  TemporalAdapterConstructor,
+  TemporalAdapterOptions,
+} from '../../../src/createTemporalAdapter';
 
 /**
  * Shared helper for the `component` project: resolves a real `AdapterTemporal` class via the
@@ -21,7 +24,8 @@ import type { TemporalAdapterConstructor, TemporalAdapterOptions } from '../../.
  */
 export async function renderWithAdapter(
   ui: ReactElement,
-  options?: TemporalAdapterOptions & Omit<LocalizationProviderProps<string>, 'dateAdapter' | 'children'>,
+  options?: TemporalAdapterOptions &
+    Omit<LocalizationProviderProps<string>, 'dateAdapter' | 'children'>,
 ) {
   const { forcePolyfill, forceWeekInfoFallback, locale, ...providerProps } = options ?? {};
   const AdapterTemporalClass: TemporalAdapterConstructor = await createTemporalAdapter({

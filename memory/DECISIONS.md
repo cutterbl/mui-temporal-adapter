@@ -8,6 +8,7 @@ still pending.
 ## Planning-phase decisions
 
 ### 1. `TDate = Temporal.ZonedDateTime`
+
 **Decision:** Back the adapter's date type with `Temporal.ZonedDateTime` (date + time + IANA zone).
 **Why:** MUI's adapter interface is generic over one `TDate` used across DatePicker, TimePicker,
 and DateTimePicker alike, and MUI's timezone-aware methods expect the adapter to resolve an IANA
@@ -16,18 +17,20 @@ zone. `ZonedDateTime` is the only Temporal type that covers all of that with one
 need bolt-on handling); `Temporal.PlainDate` (date-only — couldn't back TimePicker/DateTimePicker,
 so this couldn't be a single drop-in adapter).
 
-### 2. Async factory (`createTemporalAdapter()`) resolving to the adapter *class*
+### 2. Async factory (`createTemporalAdapter()`) resolving to the adapter _class_
+
 **Decision:** Public entry point is `async function createTemporalAdapter(): Promise<AdapterTemporalConstructor>`.
 Consumers `await` it once, then hand the resolved class to `LocalizationProvider`'s `dateAdapter` prop.
 **Why:** MUI's `LocalizationProvider` types `dateAdapter` as `new (...args) => MuiPickersAdapter` and
 calls `new DateAdapter(...)` synchronously internally — it can never `await` anything. Resolving to
-the *class itself* (not an instance) is what makes an async bootstrap compatible with that
+the _class itself_ (not an instance) is what makes an async bootstrap compatible with that
 synchronous contract.
 **Rejected alternative:** synchronous class with an internal readiness gate (methods throw/no-op
 until a background-kicked-off polyfill load resolves) — risks runtime errors on first render in
 environments lacking native Temporal.
 
 ### 3. Temporal polyfill installed onto `globalThis.Temporal`, not a bespoke accessor
+
 **Decision:** When native `Temporal` is absent, dynamically import `temporal-polyfill/global`
 (self-installing) so `Temporal` becomes a real ambient global, same as if it shipped natively.
 **Why:** User's explicit direction — "Once Temporal is loaded (if required), it should be globally
@@ -41,12 +44,14 @@ reference implementation, more spec-complete but notably larger) — chosen for 
 minimal cost" lazy-load goal.
 
 ### 4. Week-info fallback: hand-rolled static table, not a third-party package
+
 **Decision:** When `Intl.Locale.prototype.getWeekInfo` is unsupported, dynamically import our own
 small `locale → firstDay` table (CLDR-sourced) rather than a dependency like `weekstart`.
 **Why:** No new runtime dependency, easy to audit/extend, tiny chunk size, and sourced from the
 same CLDR week-data that backs the native API so the two paths agree.
 
 ### 5. Default locale = `Intl.DateTimeFormat().resolvedOptions().locale`
+
 **Decision:** When `AdapterTemporal` is constructed with no explicit locale, default to
 `Intl.DateTimeFormat().resolvedOptions().locale`, not `navigator.language`.
 **Why:** It's the exact locale identifier ICU will actually use for the adapter's own internal
@@ -56,6 +61,7 @@ identically in the browser and in Node/SSR with no `typeof window` branching —
 doesn't exist server-side.
 
 ### 6. Package name & export convention
+
 **Decision:** Package name `@cxing/mui-temporal-adapter`. Every public module
 (`createTemporalAdapter`, `AdapterTemporal`, `TemporalLocalizationProvider`) has its own build
 entry and its own `export default`, importable by subpath
@@ -63,7 +69,7 @@ entry and its own `export default`, importable by subpath
 barrel re-exports each as a named export, so the root-import form also works.
 **Why:** User's explicit choice, confirmed via a direct question: this mirrors `@mui/material`'s
 per-component default-export convention.
-**Rejected alternative:** `@mui/x-date-pickers`'s own convention actually uses *named* exports even
+**Rejected alternative:** `@mui/x-date-pickers`'s own convention actually uses _named_ exports even
 at deep subpaths (`import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'`) — flagged as a
 real discrepancy with the user's literal example syntax before deciding; user explicitly chose the
 default-export/`@mui/material`-style convention over matching x-date-pickers' own convention.
@@ -71,6 +77,7 @@ default-export/`@mui/material`-style convention over matching x-date-pickers' ow
 public module) instead of a single-entry bundle.
 
 ### 7. `TemporalLocalizationProvider`: `use()` + `<Suspense>`, not `useEffect` + a `fallback` prop
+
 **Decision:** The optional convenience wrapper is built on React 19's `use()` hook plus a
 caller-supplied `<Suspense>` boundary, backed by a module-level cached `adapterPromise` singleton.
 No `fallback`/`onError` props on the component itself.
@@ -82,6 +89,7 @@ automatically, so a custom `onError` prop would just duplicate existing React be
 `onError` props — replaced once the `use()`/`Suspense` approach was proposed and preferred.
 
 ### 8. ESM-only package (no CJS output)
+
 **Decision:** Published package is ESM-only — no `require`/CJS `exports` condition, no `main`
 field, `vite.config.ts`'s `build.lib.formats` is `['es']` only.
 **Why:** User's explicit direction ("Built publishable package should only be available as an
@@ -89,6 +97,7 @@ ESM"). CommonJS-only consumers (old Jest configs, ts-node CJS projects) simply c
 this package — documented plainly in the README as an accepted tradeoff.
 
 ### 9. Unit-testing stack: Vitest + React Testing Library, not Jest
+
 **Decision:** Component-level tests use Vitest (`component` project, jsdom environment) with
 `@testing-library/react`/`@testing-library/user-event`/`@testing-library/jest-dom` (via its
 `/vitest` matcher entry point) — no Jest anywhere in the project.
@@ -96,6 +105,7 @@ this package — documented plainly in the README as an accepted tradeoff.
 Jest"), stated as a correction after an early CJS-consumer note happened to mention Jest.
 
 ### 10. npm publish auth: Trusted Publisher / OIDC, no stored `NPM_TOKEN`
+
 **Decision:** `release.yml` authenticates to npm via OIDC (npm's Trusted Publisher feature) instead
 of a classic `NPM_TOKEN` repository secret.
 **Why:** Eliminates a long-lived credential sitting in the repo's secrets; current npm best
@@ -105,6 +115,7 @@ very first publish may need to happen once manually before OIDC trust can be con
 confirm current npm behavior at implementation time (see Open spikes).
 
 ### 11. Coverage gate scope: `unit` + `component` projects only
+
 **Decision:** The 85% branch / 90% function coverage threshold applies only to the `unit` (node)
 and `component` (jsdom) Vitest projects. The `storybook` (Playwright browser-mode) project remains
 its own separate pass/fail check in CI, not folded into the coverage numbers.
@@ -113,6 +124,7 @@ merged into one report alongside two other projects is more fragile to keep reli
 keeps the numeric gate fast and dependable while the browser project still has to pass on its own.
 
 ### 12. Changelog: committed back to the repo via `@semantic-release/git`
+
 **Decision:** `release.yml`'s semantic-release pipeline includes `@semantic-release/changelog` +
 `@semantic-release/git`, committing the bumped `package.json` + `CHANGELOG.md` back to `main` with
 `[skip ci]` in the commit message (to avoid re-triggering the workflow).
@@ -122,6 +134,7 @@ in the repo, not only on GitHub's Releases page.
 metadata — would keep `main`'s history purely human-authored, but was not the chosen tradeoff.
 
 ### 13. No `eslint-plugin-jsx-a11y`, no `@storybook/addon-a11y`
+
 **Decision:** Neither the ESLint config nor the Storybook addon list includes an accessibility
 linter/checker.
 **Why:** User's explicit direction — this package authors no DOM-rendering UI of its own.
@@ -131,6 +144,7 @@ not markup this package produces. An a11y linter/checker here would just flag JS
 the upstream library.
 
 ### 14. Package manager: pnpm
+
 **Decision:** Use pnpm (not npm) for all local install/run/build/test/pack commands throughout the
 project and its documentation. Pin the version via a `"packageManager"` field in `package.json`
 (Corepack-managed) so CI and every contributor resolve the same pnpm version.
@@ -140,15 +154,16 @@ project and its documentation. Pin the version via a `"packageManager"` field in
 `npx`; GitHub Actions workflows install pnpm via `pnpm/action-setup` before `actions/setup-node`
 (with `cache: 'pnpm'`), per pnpm's own CI setup guidance (pnpm must be on PATH before Node's cache
 step can find the pnpm store). The lockfile is `pnpm-lock.yaml`, not `package-lock.json`.
-**Not affected:** `@semantic-release/npm` still publishes to the npm *registry* via the npm CLI
+**Not affected:** `@semantic-release/npm` still publishes to the npm _registry_ via the npm CLI
 internally regardless of pnpm being the local package manager — that's an implementation detail of
 the semantic-release plugin, not something the project needs to configure around. npm Trusted
 Publisher / OIDC setup on npmjs.com is likewise unaffected — it governs registry publish auth, not
 local tooling.
 
 ### 15. `./memory/` progress-tracking system, committed to the repo
+
 **Decision:** `PLAN.md`, `DECISIONS.md` (this file), and `PROGRESS.md` live in the repo at
-`./memory/`, created as the first action of Milestone 0, and are *not* gitignored.
+`./memory/`, created as the first action of Milestone 0, and are _not_ gitignored.
 **Why:** User's explicit request, driven by wanting to review progress incrementally and be able to
 pick up cleanly after any interruption — committing them (rather than keeping them as a local-only
 scratch dir) means they travel with the code, are reviewable in PRs, and let any session (this one
@@ -157,9 +172,11 @@ resumed, or a fresh one) pick up with full context instead of re-deriving it.
 ## Implementation-time decisions
 
 ### `package.json` `exports` map: generic `"./*"` pattern, not one entry per module
+
 **Decision:** Replace the originally-planned hand-enumerated `exports` map (one explicit subpath
 key per public module — `./createTemporalAdapter`, `./AdapterTemporal`,
 `./TemporalLocalizationProvider`) with a single generic pattern:
+
 ```json
 "exports": {
   ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
@@ -167,6 +184,7 @@ key per public module — `./createTemporalAdapter`, `./AdapterTemporal`,
   "./package.json": "./package.json"
 }
 ```
+
 **Why:** User's explicit direction — the list of public modules will grow, and hand-enumerating
 every subpath in `package.json` means remembering to edit two places (the `exports` map and
 `vite.config.ts`'s `build.lib.entry` map) every time one is added, which drifts out of sync
@@ -182,9 +200,10 @@ only changes how the mapping is expressed, not what resolves.
 authors it, since it's easy to forget that adding an entry there is now sufficient on its own.
 
 ### `ensureTemporal`'s `force` option must delete the global first (Milestone 1)
+
 **Finding:** `temporal-polyfill/global`'s installer (`shim.js`) computes
 `const NativeTemporal = globalThis.Temporal;` at its own module-evaluation time and skips
-installing if that's truthy — it treats *any* pre-existing `globalThis.Temporal` as "native,"
+installing if that's truthy — it treats _any_ pre-existing `globalThis.Temporal` as "native,"
 not just a genuine engine intrinsic. So the original design (re-`import()` the same specifier
 to force a reinstall over an already-present global) silently no-ops: the import resolves to a
 module that, even freshly evaluated, still sees the existing value and refuses to overwrite it.
@@ -192,13 +211,14 @@ module that, even freshly evaluated, still sees the existing value and refuses t
 `globalThis.Temporal` before importing, so the polyfill's own native-check genuinely sees
 `undefined` and installs. This is also what makes `force`/`forcePolyfill` actually useful for the
 `LazyPolyfillEnvironment` Storybook story later (Milestone 7) — without this fix, forcing the
-polyfill path in a browser that *does* have native Temporal wouldn't have worked either.
+polyfill path in a browser that _does_ have native Temporal wouldn't have worked either.
 **Testing note:** discovered via a failing test, not by reading the polyfill's source first — the
 underlying mechanism (dynamic `import()` of the same specifier is cached across test files within
 one Vitest run) is also why the tests call `vi.resetModules()` before any assertion that expects a
 genuine (re-)installation to occur, rather than relying on execution order between test files.
 
 ### Fallback table keyed by region, resolved via `Intl.Locale().maximize()` (Milestone 1)
+
 **Decision:** `getFirstDayOfWeek()` resolves the fallback table by region code (e.g. `"US"`,
 `"FR"`), using `new Intl.Locale(localeCode).maximize().region` to fill in the likely region for
 locale tags that don't specify one (e.g. `"fr"` → region `"FR"`) — rather than the plan's original
@@ -214,10 +234,11 @@ BH, OM, JO, SY, IQ, DZ, MA, TN, LY, YE, AF) — everything else defaults to Mond
 genuinely small per decision 4, rather than attempting an exhaustive CLDR mirror.
 
 ### `ensureTemporal` superseded: install directly from `temporal-polyfill/implementation` (Milestone 2)
+
 **Finding:** The Milestone 1 "delete the global first" fix (previous entry) was still incomplete.
 `temporal-polyfill/global`'s self-install is a one-time side effect of evaluating that module — a
 dynamic `import()` of an already-evaluated module specifier returns the cached module without
-re-running its top-level code. So a *second* `force: true` call (e.g. a consumer calling
+re-running its top-level code. So a _second_ `force: true` call (e.g. a consumer calling
 `createTemporalAdapter({ forcePolyfill: true })` on a page where `Temporal` — native or
 already-polyfilled — was installed earlier) would `delete globalThis.Temporal`, then get back the
 already-evaluated `/global` module, whose install step never re-runs — leaving `globalThis.Temporal`
@@ -237,6 +258,7 @@ the two Milestone 1 test files' comments/`vi.resetModules()` calls referencing t
 were updated/removed accordingly — both still pass unchanged in behavior.
 
 ### `getInvalidDate()` sentinel design — RESOLVED (Milestone 2)
+
 **Decision:** `getInvalidDate()` returns a real, constructible `Temporal.ZonedDateTime` pinned to a
 fixed sentinel instant — JS `Date`'s own minimum representable value
 (`-8_640_000_000_000_000` epoch ms) in the `'UTC'` zone — rather than attempting to represent a
@@ -253,10 +275,11 @@ for no real benefit; a fixed, well-documented instant is simpler and just as rel
 real-world date will legitimately equal it.
 
 ### `getDayOfWeek()` is locale-relative, not raw ISO (Milestone 2)
+
 **Finding:** Cross-checked `AdapterLuxon`'s actual implementation before writing this method —
 `getDayOfWeek = value => value.localWeekday ?? value.weekday` — confirming the `MuiPickersAdapter`
 interface's terse doc comment ("1-based, 1 = first day of the week, 7 = last day of the week") means
-*locale-relative* first day, not ISO Monday-first. Calendar-grid rendering aligns columns using this
+_locale-relative_ first day, not ISO Monday-first. Calendar-grid rendering aligns columns using this
 value together with `startOfWeek()`'s own locale-aware first day, so the two must agree.
 **Decision:** `AdapterTemporal.getDayOfWeek()` computes `((value.dayOfWeek - firstDay + 7) % 7) + 1`
 using the same `getFirstDayOfWeek(this.locale)` lookup `startOfWeek()`/`endOfWeek()` already use —
@@ -264,10 +287,12 @@ using the same `getFirstDayOfWeek(this.locale)` lookup `startOfWeek()`/`endOfWee
 **Why it mattered:** using raw ISO `dayOfWeek` (Monday-first) directly would have silently
 misaligned calendar-grid columns for any locale whose week doesn't start on Monday (e.g. `en-US`),
 without failing any type check — this was a correctness gap that copying the interface's own JSDoc
-+ another adapter's real behavior caught before it shipped, not something a smoke test happened to
-exercise.
+
+- another adapter's real behavior caught before it shipped, not something a smoke test happened to
+  exercise.
 
 ### `'default'` and `'system'` timezones both resolve to the runtime's current zone (Milestone 2)
+
 **Decision:** `src/utils/timezone.ts`'s `resolveZone()` maps both the `'default'` and `'system'`
 picker-timezone values to `Temporal.Now.timeZoneId()` — the same concrete IANA zone id.
 **Why:** `Temporal.ZonedDateTime` has no separate "this was deliberately the system zone at creation
@@ -279,6 +304,7 @@ id (e.g. `'America/New_York'`), never the literal string `'system'` — a minor,
 from Luxon/dayjs's adapters, not a functional gap.
 
 ### Milestone 2 checklist gap-fill: entry-point files (Milestone 2)
+
 **Finding:** Neither `src/createTemporalAdapter.ts` nor the root barrel `src/index.ts` had an
 explicit checklist line in `PROGRESS.md`'s Milestone 2 (or anywhere in Milestones 0–4) — an oversight
 in the original plan, even though `createTemporalAdapter()` has no dependency on Milestone 3's
@@ -292,8 +318,9 @@ which isn't wired until Milestone 5 — but `PROGRESS.md`'s Milestone 4 checklis
 it needs to exist before that milestone's build-entry wiring can reference it.
 
 ### `any` banned outright — enforce via ESLint, not just `strict` (flagged Milestone 2, applies Milestone 6)
+
 **Decision:** No TypeScript file in this package may use `any` — implicit or explicit. `tsc`'s
-`strict: true` already catches *implicit* `any` (`noImplicitAny`), and a repo-wide check
+`strict: true` already catches _implicit_ `any` (`noImplicitAny`), and a repo-wide check
 (`grep -rn '\bany\b' src test`) at the time this was raised found zero actual type-position uses
 (only prose hits in comments/JSDoc, e.g. "any subset of the default formats"). But `strict` alone
 does **not** catch a deliberately-written `x: any` or `as any` — that requires
@@ -307,8 +334,14 @@ to), and re-run the same `grep -rn '\bany\b' src test` sanity check once the who
 (Milestones 3–5) exists, to confirm nothing crept in before the linter was there to catch it. Add
 this as an explicit Milestone 6 checklist line in `PROGRESS.md` (done) so it isn't lost between now
 and then.
+**Applied (Milestone 6):** `eslint.config.js` sets `'@typescript-eslint/no-explicit-any': 'error'`
+explicitly, not relying on the preset default (see the `typescript-eslint vs. TypeScript 7.x` entry
+below for how `eslint.config.js` itself came together). `pnpm lint` is clean across `src/`/`test/`
+with this rule active, and a repeat `grep -rn '\bany\b' src test` still finds zero type-position
+uses.
 
 ### Hand-rolled format/parse token engine: `D`/`DD`/`T` macros expand via `Intl`, formatted through the same token pipeline, not raw `toLocaleString()` (Milestone 3)
+
 **Decision:** `src/format/{tokenizeFormat,formatByToken,parseByToken,expandFormat,fieldTokens}.ts`
 implement the Luxon-style token vocabulary from `defaults.ts`'s `formatTokenMap`, plus three
 locale macros (`D`, `DD`, `T`) used by several of `defaultFormats` (`keyboardDate`, `fullDate`,
@@ -323,10 +356,11 @@ alone, since MUI X's keyboard-editable fields need each token to correspond to o
 independently-editable section, which a single opaque locale string can't provide.
 **Two real bugs found and fixed via an end-to-end smoke test** (not committed; the usual pattern
 for this project — see the Milestone 1/2 `ensureTemporal` entries above):
+
 1. **Macro-token digit padding vs. field-token expansion could disagree.** The first
    `expandMacroToken()` draft hardcoded unpadded tokens (`'d'`, `'M'`, `'H'`) for the `D`/`DD`/`T`
    macros' numeric fields, but `formatByToken()`'s own `'D'`/`'DD'`/`'T'` cases delegated straight
-   to `value.toLocaleString()` — and some locales' `numeric` style *is* zero-padded by CLDR
+   to `value.toLocaleString()` — and some locales' `numeric` style _is_ zero-padded by CLDR
    convention (confirmed via `fr-FR`: `format(value, 'keyboardDate')` produced `"05/03/2024"`, but
    `expandFormat('D')` produced the unpadded `"d/M/yyyy"` — meaning a `DateField` rendering
    per-section from the expanded tokens would show unpadded digits while `format()` elsewhere on
@@ -346,14 +380,15 @@ for this project — see the Milestone 1/2 `ensureTemporal` entries above):
    fix #1, now also guaranteeing ASCII digit output. This required moving `SUPPORTED_FIELD_TOKENS`
    out of `formatByToken.ts` into its own `fieldTokens.ts` module, to avoid a circular import
    (`formatByToken.ts` needing `expandFormat.ts` needing `formatByToken.ts`).
-**Verification:** smoke-tested round-trip format→parse across `en-US`, `fr-FR`, `ja-JP` (CJK
-names), and `ar-SA` (RTL + native numerals) — including every default named format, the `D`
-expansion/format/parse triple, `yy` 2-digit-year windowing, and a literal-quoted-text format —
-before deleting the throwaway test file. `tsc --noEmit` and `vitest run --project unit` both clean.
+   **Verification:** smoke-tested round-trip format→parse across `en-US`, `fr-FR`, `ja-JP` (CJK
+   names), and `ar-SA` (RTL + native numerals) — including every default named format, the `D`
+   expansion/format/parse triple, `yy` 2-digit-year windowing, and a literal-quoted-text format —
+   before deleting the throwaway test file. `tsc --noEmit` and `vitest run --project unit` both clean.
 
 ## Implementation-time findings (risks noted, not blocking)
 
 ### Peer-range lag on bleeding-edge majors (Milestone 0)
+
 **Finding:** `pnpm peers check` flags two unmet peer ranges after installing latest-tagged
 packages: `eslint-plugin-react@7.37.5` declares a peer range of `^3 || ^4 || ^5 || ^6 || ^7 || ^8
 || ^9.7` (doesn't yet list ESLint 10 even though ESLint 10.9.1 is installed), and
@@ -366,10 +401,15 @@ to satisfy stale peer metadata — re-verify at the point ESLint config is actua
 (Milestone 6) whether the plugins function correctly in practice despite the metadata gap; if
 `eslint-plugin-react`/`typescript-eslint` genuinely fail against ESLint 10/TS 7 at that point (not
 just a stale peer range warning), that's when to reconsider, not now.
+**Re-verified (Milestone 6):** both genuinely failed, for real (not just stale metadata) — see the
+`typescript-eslint vs. TypeScript 7.x` and `eslint.config.js` entries below for the full
+investigation and how each was actually resolved (a `typescript` downgrade to 6.x for the
+`typescript-eslint` case; a hardcoded `settings.react.version` for the `eslint-plugin-react` one).
 
 ## Resolved implementation-time spikes
 
 ### TS global `Temporal` typing — RESOLVED (Milestone 0)
+
 **Finding:** TypeScript 7.0.2's bundled `ESNext` lib already ships ambient `Temporal` global
 types natively — confirmed by a spike file referencing `Temporal.PlainDate.from(...)` with no
 import, which type-checked clean under `lib: ["ESNext", "DOM", "DOM.Iterable"]`, then correctly
@@ -381,8 +421,107 @@ import it as a value in consumer-facing type positions (see decision 3). The onl
 consumer needs a TypeScript version whose bundled lib includes these types for `Temporal.*` to
 type-check in their own app code — worth a one-line callout in the README/docs (not a blocker, and
 not something this package can control), but not an open item for us to build.
+**Update (Milestone 6):** the project's own `typescript` devDependency was downgraded from 7.0.2 to
+6.0.3 (see "typescript-eslint vs. TypeScript 7.x" below) — re-verified directly (a standalone `tsc`
+probe against `@typescript/typescript6`, the same TS-6-API-compatible package this finding's
+downgrade now uses as the real `typescript`) that 6.0.3 ships the identical ambient `Temporal`
+global types and resolves them identically (including correctly rejecting a deliberately-wrong
+assignment). This finding's actual consequence is unchanged; only the specific version number is.
+
+### typescript-eslint vs. TypeScript 7.x — RESOLVED, by downgrading `typescript` to 6.x (Milestone 6)
+
+**Finding:** `typescript-eslint@8.68.0` (and its own `@typescript-eslint/parser`/`eslint-plugin`
+packages individually — the guard is duplicated in each, not just the meta-package) hard-throws at
+`require()` time when it detects `typescript`'s major version is ≥7: `"typescript-eslint does not
+support TS 7.0."`, pointing at [a still-open upstream
+issue](https://github.com/typescript-eslint/typescript-eslint/issues/10940). Confirmed this isn't
+just a stale peer-range warning (as the Milestone 0 peer-lag note speculated might be the case) —
+the package's own `peerDependencies` explicitly cap at `typescript: ">=4.8.4 <6.1.0"`, and the
+`8.68.1-alpha.3` canary build still carries the identical cap and the identical throw. No released
+version supports TS 7 as of this writing.
+**What was tried first (all failed to redirect the nested peer resolution):**
+
+- pnpm `overrides` with an `npm:`-aliased target (`typescript-eslint>typescript: npm:@typescript/typescript6@…`)
+  across the full `@typescript-eslint/*` dependency subtree — recorded correctly in
+  `pnpm config list` and the lockfile's `overrides:` block, but had no effect on the actual resolved
+  symlink.
+- The same `overrides` mechanism with a plain, non-aliased semver target (`^6.0.3`, pnpm's own
+  documented example shape for "Overriding peer dependencies") — sanity-checked against the
+  _exact_ documented example (`react-dom>react: 18.3.1`) on a completely unrelated, unambiguous
+  peer edge first, to rule out anything specific to the `typescript-eslint` target; the documented
+  example itself had no effect either. Also re-tested after bumping the project's pinned pnpm
+  version (11.9.0 → 11.24.0, run via `corepack` so the bump is fully project-scoped — see
+  `package.json`'s `packageManager` field) in case this was a fixed bug in an older patch; no
+  change.
+- `packageExtensions` adding `typescript` as a real regular `dependencies` entry (pointing at the
+  `@typescript/typescript6` alias) on each affected package — recorded correctly, but a same-named
+  `peerDependencies` entry on the same package apparently still wins during linking.
+- `pnpm patch` directly editing the resolved `@typescript-eslint/parser`'s own `package.json` (move
+  `typescript` out of `peerDependencies`, into `dependencies`, pointed at the alias) — patches are
+  applied to files _after_ pnpm's dependency-graph resolution has already run, so this doesn't
+  actually change what gets resolved/linked; confirmed the symlink was unaffected by inspecting the
+  patched package's own `node_modules/typescript` symlink target.
+- Also confirmed, before spending further effort: guard-removal-only (`pnpm patch`ing out just the
+  `throw`) was **not** attempted as a real fix, since the guard exists because TypeScript 7+ no
+  longer bundles the JS Compiler API these packages actually call into at runtime (the same reason
+  `vite-plugin-dts`/`unplugin-dts` needed the `@typescript/typescript6` fallback in Milestone 4) —
+  bypassing the version check without also fixing what `require("typescript")` resolves to would
+  likely trade one clean, obvious error for a much harder-to-diagnose one deeper in real lint runs.
+
+**Decision (user-confirmed, options presented directly):** downgrade the project's own `typescript`
+devDependency from `^7.0.2` to `^6.0.3` (the real, current, published 6.x line — not the
+`@typescript/typescript6` alias, which is no longer needed anywhere once real `typescript` itself is
+6.x, and was removed as a devDependency). Rejected alternative: defer Milestone 6 indefinitely until
+typescript-eslint ships TS 7 support upstream — rejected because it has no known timeline and would
+leave `@typescript-eslint/no-explicit-any` (the standing `any`-ban directive) permanently
+unenforced.
+**Verified before deciding:** TypeScript 6.0.2 (`@typescript/typescript6`, used as a stand-in to
+probe this before committing to the downgrade) fully type-checks `Temporal.*` usage identically to
+7.0.2 — same ambient global types, same rejection of a deliberately-wrong assignment. So this
+downgrade does **not** reopen decision 1's/Milestone 0's Temporal-typing finding in any meaningful
+way; see the "Update (Milestone 6)" note added to that entry above.
+**Verified after deciding:** `typescript-eslint` now `require()`s cleanly; `tsc --noEmit`, `pnpm
+build`, and the full `unit`+`component` test suite (93 tests) all stayed green across the downgrade
+with zero source changes required beyond the version bump itself and removing the now-unnecessary
+`@typescript/typescript6` devDependency.
+
+### `eslint.config.js` authored — two further real environment quirks found and worked around (Milestone 6)
+
+Beyond the TS-version issue above, two more genuine tooling quirks surfaced while actually running
+the config (not just from stale peer-range metadata):
+
+- **`typescript-eslint`'s type-checked base config has no file scoping of its own.** Spreading
+  `...tseslint.configs.recommendedTypeChecked` directly (as an early draft did) applies the
+  TypeScript parser — and every type-aware rule — to _every_ linted file, including plain `.js`
+  config files like `eslint.config.js` itself, which crashes immediately (`@typescript-eslint/*`
+  rules that need type info throw when the file isn't part of a TS program). Fixed by using
+  typescript-eslint's own documented `{ files: ['**/*.{ts,tsx}'], extends: [...] }` pattern instead
+  of an unscoped spread.
+- **`eslint-plugin-react@7.37.5`'s `settings.react.version: 'detect'` crashes under ESLint 10**
+  (`contextOrFilename.getFilename is not a function`) — its version-detection code still calls the
+  ESLint `context.getFilename()` method, removed in ESLint 10 in favor of the `context.filename`
+  property. This is exactly the kind of peer-range-lag breakage the Milestone 0 note flagged as
+  worth re-checking here. Worked around by hardcoding `settings.react.version` to the installed
+  React major (`'19.2'`) instead of `'detect'` — every other `eslint-plugin-react` rule exercised
+  (the `flat.recommended`/`flat['jsx-runtime']` rule sets) works fine under ESLint 10; only this one
+  specific detection code path is broken. Revisit `'detect'` once `eslint-plugin-react` ships an
+  ESLint-10-clean release.
+
+Also found and fixed, via real lint findings once the config actually ran (not pre-existing, latent
+issues — these only surfaced because `pnpm lint` had never been run against this codebase before):
+a genuinely-missing JSDoc description on `AdapterTemporal`'s constructor and on `MacroToken`'s type
+alias; an `as MacroToken` cast in `formatByToken.ts` that TypeScript 6 (unlike 7) correctly flags as
+unnecessary (control-flow narrowing through the `case 'D': case 'DD': case 'T':` switch already
+narrows `token` to the literal union); and a real `@typescript-eslint/no-unsafe-member-access` false
+positive specifically on `Intl.Locale.prototype.getWeekInfo` (accessed via the _constructor's_
+`.prototype`, not an instance) under TS 6.x's `esnext.intl` lib — verified as a genuine false
+positive by cross-checking with a direct `tsc --noEmit` probe (which resolves the real, non-`any`
+`WeekInfo` return type correctly at that same expression); isolated into
+`src/week-info/hasNativeGetWeekInfo.ts` with a documented, justified `eslint-disable` so the
+explanation is written once, not repeated at every call site.
 
 ### `vite-plugin-dts` multi-entry `.d.ts` emission shape — RESOLVED (Milestone 4)
+
 **Finding:** `vite-plugin-dts@5.0.3` is now a thin wrapper around `unplugin-dts`, whose default
 (non-bundled) mode emits each processed file's declarations at a path mirroring `src/`'s own
 directory structure, relative to `entryRoot` (defaulting to the smallest common root of all
@@ -399,7 +538,7 @@ subpaths.
 flat file regardless of source nesting, which would have solved this directly. Installed
 `@microsoft/api-extractor@^7.59.0` (an explicit devDependency, since `vite-plugin-dts` only lists
 it as an optional peer) and `@typescript/typescript6@^6.0.2` (a separate, unrelated requirement —
-`unplugin-dts` needs the TS *Compiler API* to generate declarations at all, which TypeScript 7+
+`unplugin-dts` needs the TS _Compiler API_ to generate declarations at all, which TypeScript 7+
 no longer bundles; this package stays regardless of the `bundleTypes` decision below). Hit a real
 bug: `Internal Error: Unable to follow symbol for "Promise"` from API Extractor while bundling —
 a known API-Extractor limitation, not something fixable from this project's config.
@@ -416,14 +555,15 @@ files are ever referenced by `exports`. No extra tooling/dependency needed beyon
 `@typescript/typescript6`. Verified: `dist/AdapterTemporal.d.ts` and `dist/TemporalLocalizationProvider.d.ts`
 both land flat, `tsc --noEmit` and `vitest run --project unit` stay clean, and a throwaway script
 importing straight from `dist/` (both the subpath and root-barrel forms) confirmed they resolve to
-the *same* function/class and that a built `AdapterTemporal` instance actually works
+the _same_ function/class and that a built `AdapterTemporal` instance actually works
 (`adapter.date() instanceof Temporal.ZonedDateTime`, `formatByString('D')`, etc.) — not just that
 the build didn't error.
 
 ### Real bug found — `firstDayOfWeekTable.ts` wasn't actually code-split (Milestone 4)
+
 **Finding:** The first `vite build` emitted an `INEFFECTIVE_DYNAMIC_IMPORT` warning:
 `src/week-info/firstDayOfWeekTable.ts` is dynamically imported by `ensureWeekInfo.ts` (as
-designed — see Milestone 1) but was *also* statically imported by `getFirstDayOfWeek.ts`, just to
+designed — see Milestone 1) but was _also_ statically imported by `getFirstDayOfWeek.ts`, just to
 reach its `DEFAULT_FIRST_DAY` constant. Rollup can't code-split a module that's also reachable via
 a static import elsewhere, so the "small fallback table only loads when actually needed" design
 goal (stated explicitly in this file's own plan entry, and in Milestone 4's verification
@@ -437,13 +577,14 @@ the warning is gone, and `firstDayOfWeekTable-*.js` now appears as its own separ
 `dist/`, distinct from the four entry chunks.
 
 ### Real bug found — `expandFormat()` could corrupt literal text at a quoted-run boundary (Milestone 5)
+
 **Finding:** Writing the `component`/`unit` test suite (specifically a test round-tripping a stray
 unrecognized word like `"foo HH:mm"` through `expandFormat()`) surfaced a real bug: `expandFormat()`
-previously called `quoteLiteral()` independently on each literal/unrecognized-word *token*
+previously called `quoteLiteral()` independently on each literal/unrecognized-word _token_
 (one `tokenizeFormat()` piece at a time) rather than on a merged run of adjacent ones. Two
 different-letter unrecognized runs landing back-to-back (e.g. `"f"` then `"oo"` from `"foo"`) each
 got their own `'...'` wrapping, so the joined output put a closing `'` immediately next to the next
-piece's opening `'` (`"'f''oo'"`). A later `tokenizeFormat()` pass over that *same* string (as
+piece's opening `'` (`"'f''oo'"`). A later `tokenizeFormat()` pass over that _same_ string (as
 `parse()` does) reads adjacent `''` as the escaped-apostrophe sequence, not as two separate quoted
 runs — collapsing `"foo"` into the corrupted `"f'oo"`. Reachable any time a custom/expanded format
 string contains two consecutive words built only from letters this adapter doesn't recognize as
@@ -455,11 +596,12 @@ words are quoted together as a single span, never producing back-to-back quote m
 the regression test plus the full suite staying green.
 
 ### Testing-environment gotcha — React 19 `use()` + `<Suspense>` needs `await act()` around the initial `render()` in RTL/jsdom (Milestone 5)
+
 **Finding:** `TemporalLocalizationProvider`'s tests (any component that suspends via `use()` on its
 very first render) hung indefinitely — `screen.findByRole(...)` timed out with the fallback still
 showing, and React logged "A component suspended inside an `act` scope, but the `act` call was not
 awaited." Isolated with a throwaway probe component reduced to `use(Promise.resolve('hello'))`: even
-a promise that's *already resolved* by the time `render()` returns never triggered a re-render once
+a promise that's _already resolved_ by the time `render()` returns never triggered a re-render once
 the fallback returned first. Not specific to this project's code — a general React 19 + `use()` +
 `@testing-library/react` + jsdom interaction: React's own async re-render (once the suspended
 promise settles) needs to happen inside a tracked `act()` call, and a bare `render()` outside one
@@ -472,6 +614,7 @@ so a future test author reaching for `use()`-based Suspense elsewhere doesn't ha
 this the same way.
 
 ### Coverage thresholds met (Milestone 5)
+
 **Result:** `pnpm test:coverage` (`vitest run --project unit --project component --coverage`)
 passes the plan's stated 85%-branch/90%-function gate with real margin: 88.19% branches, 100%
 functions, 96.74% statements, 99.11% lines, across `src/**/*.{ts,tsx}`. `test/adapter/*.test.ts`
@@ -488,6 +631,7 @@ stay uncovered — accepted as-is rather than restructuring working code to chas
 don't block the aggregate threshold.
 
 ## Open spikes (to be resolved during implementation, logged here once settled)
+
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC
   trusted-publishing flow now supports establishing trust before a package's first publish, or
   whether one manual `npm publish --access public` is still required first. — **UNRESOLVED**
