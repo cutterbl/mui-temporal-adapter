@@ -40,7 +40,7 @@
     "test:storybook": "vitest run --project storybook",
     "test:all": "vitest run",
     "release": "semantic-release",
-    "prepare": "husky"
+    "prepare": "[ \"$CI\" = \"true\" ] || husky"
   },
   "keywords": [
     "mui",

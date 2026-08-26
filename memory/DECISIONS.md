@@ -905,3 +905,70 @@ fix, not a wholesale switch to PAT-based auth. This is also a well-precedented p
 one-off workaround: virtually every real-world "semantic-release publishing to a protected
 default branch" setup needs exactly this, since it's a structural gap in GitHub's required-status-
 checks feature, not something specific to this repo's configuration.
+
+### Real bug found — second `release.yml` run: `npm publish` failed with a misleading
+
+### `ENEEDAUTH` despite OIDC trust being valid, and left a premature `v1.0.0` tag (Milestone 9)
+
+**Symptom:** with the PAT fix above in place, the run got much further — `@semantic-release/npm`'s
+own preflight logged `Verifying OIDC context for publishing from GitHub Actions` immediately
+followed by `OIDC token exchange with the npm registry succeeded`, and the `@semantic-release/git`
+push succeeded this time (commit `chore(release): 1.0.0 [skip ci]` landed on `main`, along with
+`CHANGELOG.md` and a pushed `v1.0.0` git tag — semantic-release core creates and pushes the tag
+right after the `prepare` phase, _before_ the `publish` phase's actual `npm publish` runs). Then
+the real `npm publish` subprocess failed outright: `npm error code ENEEDAUTH`.
+
+**Root cause:** confirmed via research (npm/cli#9088) this is a known, actively-tracked npm CLI
+diagnostics gap — `ENEEDAUTH`/`404` are npm's generic fallback errors for _any_ trusted-publishing
+failure, actively misleading users toward the wrong fix (package naming, manual login) instead of
+the real issue. The documented common cause, matching our case exactly: an npm CLI version too old
+to support OIDC (needs >= 11.5.1) actually being what's invoked for the real `npm publish`
+subprocess, even after an `npm install -g npm@latest` step — the upgrade itself succeeds, but nothing
+guarantees the _new_ binary is what later steps resolve via `PATH`, and `@semantic-release/npm`'s
+own preflight OIDC check apparently doesn't shell out through the same resolution path (it can
+succeed independently of what the later real `npm publish` subprocess actually finds on `PATH`).
+
+**Compounding issue found:** since the git tag `v1.0.0` was already pushed before the failure, a
+naive retry would have looked at git history, found `v1.0.0` already exists, concluded the release
+was already complete, and silently no-op'd forever — never actually retrying the `npm publish`.
+**Recovery performed:** confirmed via `npm view ... versions` that the registry still only had the
+placeholder `0.0.1` (so nothing to unpublish), then deleted the tag both remotely
+(`git push --delete origin v1.0.0`) and locally before the retry. Deliberately left the already-
+landed `chore(release): 1.0.0 [skip ci]` commit (package.json bump + CHANGELOG.md) on `main` as-is
+— it's exactly what the next successful run needs to converge back to anyway.
+
+**Fix:** `release.yml`'s npm-upgrade step now explicitly prepends the freshly-installed npm's real
+global bin directory to `GITHUB_PATH`, plus a following diagnostic step that prints exactly what
+`npm --version`/`command -v npm` resolve to in a _later_ step's shell (GITHUB_PATH edits don't
+affect the step that wrote them, only subsequent ones) — provable evidence either way instead of
+another guess. **If this repeats:** check `main`/the registry/existing tags exactly as done here
+before any retry, every time — a partially-completed run leaving a stray tag is a structural
+possibility any time `@semantic-release/git`'s push succeeds but a later plugin step fails.
+
+### Two more real bugs caught (user-directed, before merging the npm-version fix)
+
+**1. Missing build step — `release.yml` would have published an empty package.** Confirmed
+directly from the failed run's own `npm publish` tarball listing: only 3 files —
+`LICENSE`, `README.md`, `package.json`. No `dist/` at all. `ci-checks.yml`'s `pnpm run build`
+runs in a completely separate reusable-workflow job on its own isolated runner — nothing carries
+over to `release.yml`'s own `release` job without an explicit artifact upload/download, and that
+job never ran its own build. This would have silently shipped a real `1.0.0` on the npm registry
+containing zero actual library code, the moment the auth issue above got fixed, had it not been
+caught first. **Fix:** added an explicit `pnpm run build` step to the `release` job, right after
+`pnpm install`, before anything else — confirmed via `vite.config.ts` that the build doesn't embed
+`package.json`'s version anywhere, so running it before semantic-release's own version bump is
+fine.
+
+**2. Husky's `prepare` script running (uselessly, silently) in every CI job.** `"prepare": "husky"`
+runs on every plain `pnpm install` — including every `ci-checks`/`validate`/`storybook-deploy`/
+`release` job across this whole milestone, and specifically during `npm publish` itself (`prepare`
+is documented to run before a package is packed for publishing, not just on local install).
+The failed release run's log showed `> @cxing/mui-temporal-adapter@1.0.0 prepare\n> husky\n` with
+zero further output — consistent with Husky v9's own undocumented-to-us CI auto-detection already
+silently no-op'ing it, but relying on that silently, on every single CI run so far, wasn't good
+enough once actually looked at. **Decision (user-directed):** made the CI-skip explicit rather
+than trusting Husky's internal behavior — `"prepare": "[ \"$CI\" = \"true\" ] || husky"` in
+`package.json`. `CI=true` is set automatically by GitHub Actions (and virtually every other CI
+provider), so this needs no workflow-file changes across any of the four workflows; local
+`pnpm install` (no `CI` env var) still installs hooks normally. Verified the conditional both ways
+directly before committing.

@@ -297,7 +297,15 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       rejected by branch protection (structural gap, not this repo's misconfiguration — see
       `DECISIONS.md`). Fixed via a fine-grained `RELEASE_GITHUB_TOKEN` PAT secret used only for
       that one checkout/push step; fix on its own branch (`fix/release-workflow-push-token`)
-- [ ] Merge the push-token fix, re-run `release.yml`, confirm the real `1.0.0` release + npm
+- [x] Merged the push-token fix (PR #3) — push worked this time, but `npm publish` itself failed
+      with a misleading `ENEEDAUTH` (known npm CLI diagnostics gap, npm/cli#9088 — real cause:
+      the upgraded npm CLI likely wasn't what the `npm publish` subprocess resolved via `PATH`).
+      Also had to delete a premature `v1.0.0` tag that had already been pushed before the
+      failure, to stop the next run from thinking the release was already done — see
+      `DECISIONS.md`. Confirmed nothing published to npm yet (`0.0.1` placeholder only); the
+      landed `chore(release): 1.0.0 [skip ci]` commit was left on `main` as-is
+- [ ] Fix on its own branch (`fix/release-npm-version`) — explicit `GITHUB_PATH` prepend +
+      diagnostic step. Merge and re-run `release.yml`; confirm the real `1.0.0` release + npm
       publish + Pages deploy actually complete this time
 
 ## Milestone 10 — Documentation consistency pass
