@@ -1039,3 +1039,21 @@ not directly in the manager UI's own DOM. Direct `?path=` deep-linking into a fr
 static build was unreliable (hit a stale "No Preview" state) — navigating via an actual sidebar
 click, matching how a real visitor would browse, worked reliably. Worth remembering for any future
 verification script against this Storybook build.
+
+### Post-Milestone-10 polish (user-directed): sidebar top-level order + Lazy Polyfill Environment copy
+
+**Sidebar order:** `storySort`'s `method: 'alphabetical'` (needed for the numbered `Docs/N. ...`
+pages to read in order) also alphabetized the top-level groups themselves, landing "How It Works"
+second — not the intended reading order. `storySort` supports combining `method` with an explicit
+`order` array: `order` fixes the position of named groups (any nesting level), `method` still
+governs sorting for anything `order` doesn't name (i.e. the numbered pages within `Docs`, and any
+future group not yet listed). Set `order: ['Docs', 'Setup', 'Locales', 'Pickers', 'How It Works']`
+per the user's explicit requested order. Verified directly against the real built site: fresh page
+load shows exactly `Docs, Setup, Locales, Pickers, How It Works`.
+
+**Lazy Polyfill Environment copy:** the three stories' `docs.description.story` text was too
+technically dense for the plain-English tone the rest of the docs hold to (explained _why_ the
+mechanism exists in each case, rather than just what's being demonstrated). Replaced with a short,
+consistent template per the user's own wording: "Here we force lazy loading of \[X], to test that
+loading works as intended when needed. You won't do any of this yourself." Verified the new text
+renders correctly against the real built site.

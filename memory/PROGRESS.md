@@ -338,6 +338,11 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       `#cldr-common-locale-data-repository`, real slug ≠ assumed one) and a sidebar-grouping bug
       in the new story file itself, both before committing — see `DECISIONS.md`
 - [x] `eslint-plugin-jsdoc` clean across `src/**` — reconfirmed
+- [x] Post-completion polish (user-directed): sidebar top-level order fixed to
+      `Docs, Setup, Locales, Pickers, How It Works` via `storySort`'s `order` option (combined
+      with `method: 'alphabetical'`, which still governs the numbered `Docs` sub-pages);
+      simplified the three Lazy Polyfill Environment stories' descriptions to a short, consistent
+      plain-English template. Both verified against the real built site — see `DECISIONS.md`
 
 ## Notes / blockers
 
