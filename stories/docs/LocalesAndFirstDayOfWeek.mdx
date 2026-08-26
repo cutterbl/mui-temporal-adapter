@@ -47,7 +47,8 @@ default. Pass it as the `adapterLocale` prop on `LocalizationProvider` (or
 Modern browsers have a built-in way to ask "what day does the week start on for this locale?"
 This package uses that directly when it's available. Older browsers don't have it yet — for
 those, this package quietly falls back to a small built-in table with the same information,
-sourced from the same public reference data (called CLDR) that browsers themselves use. Either
+sourced from the same public reference data (called
+[CLDR](/docs/docs-8-glossary--docs#cldr-common-locale-data-repository)) that browsers themselves use. Either
 way, a visitor sees the correct starting day for their locale; see
 [How the Fallbacks Work](/docs/docs-6-how-the-fallbacks-work--docs) for more on this pattern in
 general.
