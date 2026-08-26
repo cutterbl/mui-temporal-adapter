@@ -47,6 +47,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # `ci-checks.yml`'s own `pnpm run build` runs in a completely separate job/runner — nothing
+      # carries over between jobs without an explicit artifact upload/download. Without this step,
+      # `npm publish` below would pack a tarball with no `dist/` at all (confirmed: an earlier
+      # attempt actually did this — the published tarball listing showed only LICENSE, README.md,
+      # and package.json). See memory/DECISIONS.md.
+      - name: Build the package
+        run: pnpm run build
+
       # Trusted Publishing (OIDC) needs npm CLI >= 11.5.1; don't rely on whatever ships with
       # the Node runtime image. `npm install -g npm@latest` alone isn't enough to trust blindly —
       # a prior run got a misleading `ENEEDAUTH` from the actual `npm publish` subprocess despite

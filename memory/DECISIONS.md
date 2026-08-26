@@ -944,3 +944,31 @@ affect the step that wrote them, only subsequent ones) — provable evidence eit
 another guess. **If this repeats:** check `main`/the registry/existing tags exactly as done here
 before any retry, every time — a partially-completed run leaving a stray tag is a structural
 possibility any time `@semantic-release/git`'s push succeeds but a later plugin step fails.
+
+### Two more real bugs caught (user-directed, before merging the npm-version fix)
+
+**1. Missing build step — `release.yml` would have published an empty package.** Confirmed
+directly from the failed run's own `npm publish` tarball listing: only 3 files —
+`LICENSE`, `README.md`, `package.json`. No `dist/` at all. `ci-checks.yml`'s `pnpm run build`
+runs in a completely separate reusable-workflow job on its own isolated runner — nothing carries
+over to `release.yml`'s own `release` job without an explicit artifact upload/download, and that
+job never ran its own build. This would have silently shipped a real `1.0.0` on the npm registry
+containing zero actual library code, the moment the auth issue above got fixed, had it not been
+caught first. **Fix:** added an explicit `pnpm run build` step to the `release` job, right after
+`pnpm install`, before anything else — confirmed via `vite.config.ts` that the build doesn't embed
+`package.json`'s version anywhere, so running it before semantic-release's own version bump is
+fine.
+
+**2. Husky's `prepare` script running (uselessly, silently) in every CI job.** `"prepare": "husky"`
+runs on every plain `pnpm install` — including every `ci-checks`/`validate`/`storybook-deploy`/
+`release` job across this whole milestone, and specifically during `npm publish` itself (`prepare`
+is documented to run before a package is packed for publishing, not just on local install).
+The failed release run's log showed `> @cxing/mui-temporal-adapter@1.0.0 prepare\n> husky\n` with
+zero further output — consistent with Husky v9's own undocumented-to-us CI auto-detection already
+silently no-op'ing it, but relying on that silently, on every single CI run so far, wasn't good
+enough once actually looked at. **Decision (user-directed):** made the CI-skip explicit rather
+than trusting Husky's internal behavior — `"prepare": "[ \"$CI\" = \"true\" ] || husky"` in
+`package.json`. `CI=true` is set automatically by GitHub Actions (and virtually every other CI
+provider), so this needs no workflow-file changes across any of the four workflows; local
+`pnpm install` (no `CI` env var) still installs hooks normally. Verified the conditional both ways
+directly before committing.
