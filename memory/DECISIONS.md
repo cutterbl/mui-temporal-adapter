@@ -972,3 +972,15 @@ than trusting Husky's internal behavior — `"prepare": "[ \"$CI\" = \"true\" ] 
 provider), so this needs no workflow-file changes across any of the four workflows; local
 `pnpm install` (no `CI` env var) still installs hooks normally. Verified the conditional both ways
 directly before committing.
+
+### `release.yml`: dropped the duplicate `ci-checks` job (user-directed, post-Milestone-9)
+
+**Decision:** removed `release.yml`'s own `ci-checks` job (and the `release` job's `needs:` on
+it) — it now goes straight to the `release` job on every trigger.
+**Why:** branch protection on `main` already requires `validate.yml`'s checks (which call the
+exact same `ci-checks.yml` reusable workflow) to pass before any PR can merge. By the time a push
+reaches `main`, it has always already been validated — running the identical typecheck/lint/
+coverage/build sequence a second time on every release push was pure duplicated work, not an
+extra safety margin. The one push to `main` that bypasses PR review entirely is `release.yml`'s
+own `chore(release)` commit-back, which only ever touches `package.json`'s version field and
+`CHANGELOG.md` — nothing there needs re-validating either.

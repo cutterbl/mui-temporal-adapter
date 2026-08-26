@@ -14,13 +14,14 @@ permissions:
   pull-requests: write
 
 jobs:
-  ci-checks:
-    name: CI checks
-    uses: ./.github/workflows/ci-checks.yml
-
+  # No ci-checks job here on purpose: branch protection on `main` already requires validate.yml's
+  # checks to pass before any PR can merge, so by the time a push lands on `main`, it's already
+  # been validated — re-running typecheck/lint/coverage/build here would just duplicate that same
+  # work a second time for no benefit. (The one push to `main` that skips PR review entirely is
+  # this workflow's own `chore(release)` commit-back, which only ever touches package.json's
+  # version and CHANGELOG.md — no source changes to re-validate.)
   release:
     name: semantic-release
-    needs: ci-checks
     runs-on: ubuntu-latest
     steps:
       # `@semantic-release/git` pushes the version/changelog commit straight to `main`, which

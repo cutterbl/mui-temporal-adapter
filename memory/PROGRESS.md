@@ -319,6 +319,10 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       get here (#1 initial merge, #2 release.yml, #3 push-token fix, #4 npm-version + build +
       husky fixes) — every failure mode hit along the way is fully written up in `DECISIONS.md`
       for any future session standing up a similar semantic-release + protected-branch pipeline
+- [x] Post-completion fix (user-directed): `release.yml` no longer runs its own `ci-checks` job —
+      branch protection already requires `validate.yml`'s checks to pass before anything merges
+      into `main`, so re-running typecheck/lint/coverage/build a second time on every release push
+      was pure duplicated work. See `DECISIONS.md`.
 
 ## Milestone 10 — Documentation consistency pass
 
