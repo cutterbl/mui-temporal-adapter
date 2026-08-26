@@ -293,8 +293,12 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       ("require 2FA, disallow bypass tokens"), confirmed via npm's own docs this doesn't affect
       OIDC/Trusted Publisher auth, only classic token publishing — see `DECISIONS.md`
 - [x] `.github/workflows/release.yml` added on its own branch (`chore/add-release-workflow`),
-      per the ordering above — this is the push that will produce the real first `1.0.0`
-      release + npm publish + Pages deploy once merged
+      merged via PR #2 — **first run failed**: `@semantic-release/git`'s push to `main` was
+      rejected by branch protection (structural gap, not this repo's misconfiguration — see
+      `DECISIONS.md`). Fixed via a fine-grained `RELEASE_GITHUB_TOKEN` PAT secret used only for
+      that one checkout/push step; fix on its own branch (`fix/release-workflow-push-token`)
+- [ ] Merge the push-token fix, re-run `release.yml`, confirm the real `1.0.0` release + npm
+      publish + Pages deploy actually complete this time
 
 ## Milestone 10 — Documentation consistency pass
 

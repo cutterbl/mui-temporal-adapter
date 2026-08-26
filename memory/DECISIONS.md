@@ -863,3 +863,45 @@ npm's own docs recommend pairing Trusted Publishers with this strictest setting.
 **Decision:** enabled it on the package (user's choice, confirmed via direct question) — no impact
 on `release.yml`'s ability to publish going forward; only affects any _future_ manual
 `npm publish` from a terminal, which would now require 2FA each time (expected/desired).
+
+### Real bug found — first `release.yml` run failed: required status checks can never be
+
+### satisfied by a direct push (Milestone 9)
+
+**Symptom:** the very first automated release run got all the way through
+`@semantic-release/npm`'s `prepare` step (correctly computed `1.0.0`, wrote it to
+`package.json`, generated `CHANGELOG.md`) and then failed at `@semantic-release/git`'s `prepare`
+step: `git push --tags HEAD:main` was rejected —
+`GH006: Protected branch update failed ... 2 of 2 required status checks are expected`. Nothing
+landed anywhere (semantic-release aborts the whole pipeline before the `publish` step once any
+`prepare` step fails) — confirmed `main` and the npm registry were both untouched.
+
+**Root cause:** required-status-checks-before-push is structurally incompatible with a brand-new
+commit pushed directly — the check literally cannot have run against a SHA that doesn't exist
+upstream yet; the feature is built around PR merges (where the checked SHA is what lands), not
+direct pushes. `enforce_admins: false` didn't help either: the pusher is the `github-actions[bot]`
+identity via the default `GITHUB_TOKEN`, which isn't a human/admin-role account and so doesn't
+inherit that exemption regardless of the toggle.
+
+**First approach tried and rejected:** migrating from classic branch protection to a GitHub
+Ruleset with a `bypass_actors` entry for the built-in "GitHub Actions" app (id `15368`, confirmed
+via `gh api apps/github-actions`) — the API rejected it: `"Actor GitHub Actions integration must
+be part of the ruleset source or owner organization"`. Researched further: Ruleset bypass via a
+GitHub App only works for a genuinely separate custom App with its own installation/private key
+(confirmed via a real-world example fix), not the built-in Actions identity backing the default
+token — for a personal (non-org) repo especially, this would mean _more_ stored-credential
+overhead (a whole App + private key secret), not less. Reverted cleanly back to classic branch
+protection (nothing was actually created before the rejection, so no cleanup needed beyond
+re-creating the classic rule, which had been deleted to attempt the migration).
+
+**Actual fix:** a fine-grained PAT (`Contents: read/write` only, scoped to just this repo)
+belonging to the repo owner, stored as the `RELEASE_GITHUB_TOKEN` secret, used **only** as
+`release.yml`'s checkout step's `token:` input — this makes the one `git push` that needs to land
+past branch protection authenticate as an actual admin-role account (which `enforce_admins: false`
+does exempt), matching how a human's own local push already succeeds. Everything else (the `npm
+publish` via OIDC, the GitHub Release/tag via `@semantic-release/github`) is untouched and still
+uses the auto-issued, scoped, short-lived default `GITHUB_TOKEN` — this is the minimum-privilege
+fix, not a wholesale switch to PAT-based auth. This is also a well-precedented pattern, not a
+one-off workaround: virtually every real-world "semantic-release publishing to a protected
+default branch" setup needs exactly this, since it's a structural gap in GitHub's required-status-
+checks feature, not something specific to this repo's configuration.

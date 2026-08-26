@@ -23,10 +23,20 @@ jobs:
     needs: ci-checks
     runs-on: ubuntu-latest
     steps:
+      # `@semantic-release/git` pushes the version/changelog commit straight to `main`, which
+      # branch protection's required-status-checks rule can never satisfy for a brand-new commit
+      # (the check can't have run against a SHA that doesn't exist upstream yet — that mechanism
+      # is built around PR merges, not direct pushes). The default GITHUB_TOKEN authenticates as
+      # the `github-actions[bot]` identity, which isn't exempt regardless of `enforce_admins`.
+      # RELEASE_GITHUB_TOKEN is a fine-grained PAT (Contents: read/write only) belonging to the
+      # repo owner, used only so this one push lands as an actual admin account — everything
+      # else (npm publish, the GitHub Release itself) still goes through OIDC/the default token.
+      # See memory/DECISIONS.md.
       - name: Check out the repo
         uses: actions/checkout@v7
         with:
           fetch-depth: 0 # semantic-release needs full history + tags to compute the next version
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 
       - name: Set up pnpm + Node
         uses: pnpm/setup@v2
