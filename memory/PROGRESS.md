@@ -197,6 +197,11 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
 - [x] `DatePicker.stories.tsx` (Default, WithMinAndMaxDate)
 - [x] `TimePicker.stories.tsx` (Default, TwentyFourHour)
 - [x] `DateTimePicker.stories.tsx` (Default, InAFixedTimeZone)
+- [x] User-directed follow-up (post-initial-commit): all 6 of the above stories rewritten as
+      genuinely controlled components — live `useState(() => Temporal.Now.zonedDateTimeISO(...))`
+      value, current value shown as text below each field, and `parameters.docs.source.code`
+      pinning "Show code" to the matching idiomatic snippet (verified against the real rendered
+      panel via Playwright, not just that the parameter was set). See `DECISIONS.md`.
 - [x] `LazyPolyfillEnvironment.stories.tsx` (ForcedPolyfill, ForcedWeekInfoFallback,
       BothForced — each via `parameters.temporal`)
 - [x] `LocaleWeekStart.stories.tsx` (SwitchLocale — a small local demo component with a real

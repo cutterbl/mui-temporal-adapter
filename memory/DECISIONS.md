@@ -743,6 +743,31 @@ Sorting alphabetically by title string correctly orders the single-digit `1.`–
 rendered sidebar DOM (not just the build output) via Playwright against a served
 `storybook-static` build — the 8 Docs entries now render in the DOM in the order 1 through 8.
 
+### Picker stories rewritten as controlled components (user-directed, post-Milestone 7)
+
+**Request:** all three main picker stories (`DatePicker`/`TimePicker`/`DateTimePicker`) should
+show `value` as a genuinely controlled, live `Temporal` value, in both the rendered example and
+the "Show code" panel.
+**Implementation:** each story's `Default`/variant now uses `render: () => <NamedDemo />` backing
+a small **named** local component (`DefaultDemo`, `WithMinAndMaxDateDemo`, etc.) — not an inline
+arrow function — specifically so `react-hooks/rules-of-hooks` (and React itself) recognize the
+`useState` call inside it as belonging to a real component; an anonymous `render: () => { useState...
+}` arrow assigned as an object property doesn't read as a component by the lint rule's naming
+heuristic and gets flagged. Each demo component holds `value` in real `useState(() =>
+Temporal.Now.zonedDateTimeISO(...))` state, passes `value`/`onChange` to the real MUI picker, and
+renders the current value as visible text below the field, so the live example genuinely
+demonstrates real-time Temporal state, not just a static example.
+**"Show code" panel:** by default, Storybook's docs page synthesizes source code from a story's
+`args` for `component`+`args`-only stories — but these stories use a custom `render` instead
+(needed for the controlled-component pattern above), and relying on automatic source extraction
+from an arbitrary `render` function's structure was judged too fragile/uncertain to guarantee the
+panel shows exactly the intended idiomatic snippet. Set `parameters.docs.source.code` explicitly
+per story instead — `@storybook/addon-docs/blocks`'s own `Source` block documents this exact
+option ("Use this to override the content of the source block"). Verified directly: built
+`storybook-static`, served it, clicked each story's real "Show code" toggle via Playwright, and
+confirmed the rendered panel text contains the intended `useState`/`Temporal.Now.zonedDateTimeISO`
+snippet verbatim — not just that the parameter was set in source.
+
 ## Open spikes (to be resolved during implementation, logged here once settled)
 
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC
