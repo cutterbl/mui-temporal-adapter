@@ -71,15 +71,21 @@ export const Default: Story = {
 const MIN_MAX_SOURCE = `import { useState } from 'react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
-const minDate = Temporal.PlainDate.from('2026-01-01').toZonedDateTime('UTC');
-const maxDate = Temporal.PlainDate.from('2026-12-31').toZonedDateTime('UTC');
+// A range within a single month — narrow enough to see every disabled day without having to
+// navigate the calendar popup at all.
+const minDate = Temporal.PlainDate.from('2026-03-05').toZonedDateTime('UTC');
+const maxDate = Temporal.PlainDate.from('2026-03-25').toZonedDateTime('UTC');
 
 function ControlledDatePickerWithRange() {
-  const [value, setValue] = useState(() => Temporal.Now.zonedDateTimeISO('UTC'));
+  // A fixed starting date (not "now") that already falls inside minDate/maxDate, so the popup
+  // opens already showing the very month the range restricts.
+  const [value, setValue] = useState(() =>
+    Temporal.PlainDate.from('2026-03-15').toZonedDateTime('UTC'),
+  );
 
   return (
     <DatePicker
-      label="Pick a date in 2026"
+      label="Pick a date in March 2026"
       value={value}
       onChange={(newValue) => newValue && setValue(newValue)}
       minDate={minDate}
@@ -88,17 +94,23 @@ function ControlledDatePickerWithRange() {
   );
 }`;
 
-const minDate = Temporal.PlainDate.from('2026-01-01').toZonedDateTime('UTC');
-const maxDate = Temporal.PlainDate.from('2026-12-31').toZonedDateTime('UTC');
+// A range within a single month — narrow enough to see every disabled day without having to
+// navigate the calendar popup at all.
+const minDate = Temporal.PlainDate.from('2026-03-05').toZonedDateTime('UTC');
+const maxDate = Temporal.PlainDate.from('2026-03-25').toZonedDateTime('UTC');
 
 /** Backs the `WithMinAndMaxDate` story below — see `DefaultDemo`'s doc comment for why this is
  * a named component rather than an inline arrow function. */
 function WithMinAndMaxDateDemo() {
-  const [value, setValue] = useState(() => Temporal.Now.zonedDateTimeISO('UTC'));
+  // A fixed starting date (not "now") that already falls inside minDate/maxDate, so the popup
+  // opens already showing the very month the range restricts.
+  const [value, setValue] = useState(() =>
+    Temporal.PlainDate.from('2026-03-15').toZonedDateTime('UTC'),
+  );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
       <DatePicker
-        label="Pick a date in 2026"
+        label="Pick a date in March 2026"
         value={value}
         onChange={(newValue) => newValue && setValue(newValue)}
         minDate={minDate}
@@ -119,8 +131,10 @@ export const WithMinAndMaxDate: Story = {
       description: {
         story:
           'Reach for `minDate`/`maxDate` when only some dates should be pickable — here, only ' +
-          '2026. Dates outside the range are shown but disabled in the calendar popup. `value` ' +
-          'is still live, controlled state — the same pattern as the default story above.',
+          'March 5–25, 2026. The range is deliberately narrow (inside one month, with a fixed ' +
+          'starting `value` that already falls inside it) so opening the calendar immediately ' +
+          'shows disabled days at both ends, with no need to navigate months to see the effect. ' +
+          '`value` is still live, controlled state — the same pattern as the default story above.',
       },
     },
   },

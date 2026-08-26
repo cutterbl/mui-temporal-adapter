@@ -767,6 +767,14 @@ option ("Use this to override the content of the source block"). Verified direct
 `storybook-static`, served it, clicked each story's real "Show code" toggle via Playwright, and
 confirmed the rendered panel text contains the intended `useState`/`Temporal.Now.zonedDateTimeISO`
 snippet verbatim — not just that the parameter was set in source.
+**Follow-up (user-directed):** `WithMinAndMaxDate`'s original range (`minDate`/`maxDate` spanning
+all of 2026) was too broad to actually _see_ — the popup opens on today's month, nowhere near
+either boundary, so the restriction wasn't visually apparent without navigating many months.
+Narrowed to a range inside a single month (`2026-03-05`–`2026-03-25`) with a fixed starting
+`value` (`2026-03-15`, not "now") that already falls inside it, so the calendar popup opens
+already showing disabled days at both ends in the very first view. Verified directly via
+Playwright against the real rendered popup: opens on "March 2026" with days 1–4 and 26–31 disabled
+and 5–25 enabled, no navigation needed.
 
 ## Open spikes (to be resolved during implementation, logged here once settled)
 
