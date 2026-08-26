@@ -326,10 +326,18 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
 
 ## Milestone 10 — Documentation consistency pass
 
-- [ ] Re-read all 8 MDX pages back-to-back for undefined jargon/acronyms and tone drift
-- [ ] Spot-check JSDoc renders sensibly in editor tooltips
-- [ ] Spot-check JSDoc renders sensibly in Storybook autodocs prop tables
-- [ ] `eslint-plugin-jsdoc` clean across `src/**`
+- [x] Re-read all 8 MDX pages back-to-back for undefined jargon/acronyms and tone drift — found
+      and fixed a real one ("CLDR" named but unexplained/un-linked); see `DECISIONS.md`
+- [x] Spot-check JSDoc renders sensibly in editor tooltips — read all three public-API entry
+      files directly; all clear and precise
+- [x] Spot-check JSDoc renders sensibly in Storybook autodocs prop tables — found and fixed a
+      real gap: `TemporalLocalizationProvider` had no autodocs page at all despite `PLAN.md`
+      explicitly calling for one. Added `stories/TemporalLocalizationProvider.stories.tsx`;
+      verified via Playwright against the real built site (prop table populated, story renders
+      a working picker). Also caught and fixed a broken Glossary anchor (`#cldr` →
+      `#cldr-common-locale-data-repository`, real slug ≠ assumed one) and a sidebar-grouping bug
+      in the new story file itself, both before committing — see `DECISIONS.md`
+- [x] `eslint-plugin-jsdoc` clean across `src/**` — reconfirmed
 
 ## Notes / blockers
 

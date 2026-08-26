@@ -984,3 +984,58 @@ coverage/build sequence a second time on every release push was pure duplicated 
 extra safety margin. The one push to `main` that bypasses PR review entirely is `release.yml`'s
 own `chore(release)` commit-back, which only ever touches `package.json`'s version field and
 `CHANGELOG.md` — nothing there needs re-validating either.
+
+## Milestone 10 — Documentation consistency pass
+
+Re-read all 8 MDX pages back-to-back; overall tone/jargon-explanation held up well. Found and
+fixed several real issues along the way, all verified against the actual built Storybook output
+(not just read as source) via Playwright against a real served `storybook-static`:
+
+**1. Unexplained acronym, and a broken link underneath it once fixed.** `LocalesAndFirstDayOfWeek.mdx`
+named "CLDR" parenthetically with no explanation and no Glossary entry — a real violation of the
+docs' own stated rule ("no unexplained acronyms"). Added a `### CLDR (Common Locale Data Repository)`
+Glossary entry and linked to it. **Second bug found in the process:** the obvious anchor
+(`#cldr`) doesn't actually exist — Storybook's MDX heading-to-id slugification uses the _entire_
+heading text, so `### CLDR (Common Locale Data Repository)` generates
+`#cldr-common-locale-data-repository`, not `#cldr`. Confirmed directly by reading the real
+rendered heading `id` attributes in a built-and-served Storybook, not assumed. Checked every other
+Glossary anchor link in the docs (`#temporal`, the only other one) — that one's fine, since its
+heading has no parenthetical to lengthen the slug.
+
+**2. Real gap: `TemporalLocalizationProvider` had no autodocs reference page at all.** `PLAN.md`'s
+Documentation section explicitly anticipated Storybook's autodocs reading this component's JSDoc
+to populate a prop table (calling it out as "not separate work" from writing the JSDoc itself) —
+but no `.stories.tsx` file ever set `component: TemporalLocalizationProvider` with
+`tags: ['autodocs']`; it only ever appeared as a dependency inside other stories (via the global
+decorator), never as its own reference entry. Added `stories/TemporalLocalizationProvider.stories.tsx`
+— a `Default` story (the same canonical `<Suspense>` + picker example from `GettingStarted.mdx`)
+plus the `meta`/`tags: ['autodocs']` wiring needed to generate its own page. Verified via
+Playwright against the real built site: the page exists, its own two props
+(`forcePolyfill`/`forceWeekInfoFallback`) render correctly with their JSDoc descriptions, and the
+`Default` story genuinely renders a working `DatePicker` field.
+
+**Noted, not fixed:** the rendered prop table does _not_ include props inherited through
+`TemporalLocalizationProviderProps extends Omit<LocalizationProviderProps<string>, 'dateAdapter'>`
+(e.g. `adapterLocale`) — confirmed via the real rendered table (only the two own-declared props
+appear). This is a known `react-docgen-typescript` limitation with `Omit<>`/generic inheritance
+chains, not a mistake in how the JSDoc was written, and arguably the right outcome regardless:
+this page now shows exactly the props unique to this package, while MUI's own docs already cover
+the inherited `LocalizationProvider` surface.
+
+**3. Sidebar grouping bug in the new story file itself, caught before committing.** First attempt
+used a flat title (`'TemporalLocalizationProvider'`, no `/`) — Storybook only nests a story under
+a category when the title has a `Group/Name` shape, so a flat title rendered as an ungrouped
+top-level sidebar entry, inconsistent with every other story in the book. Fixed by giving it a
+proper group: `'Setup/TemporalLocalizationProvider'`.
+
+**4. Spot-checked JSDoc quality directly** (the "editor tooltip" check) on all three public-API
+entry files (`createTemporalAdapter.ts`, `AdapterTemporal.ts`, `TemporalLocalizationProvider.tsx`)
+— all read clearly and precisely, consistent with the standard set in `PLAN.md`'s Documentation
+section. `eslint-plugin-jsdoc` reconfirmed clean across `src/**`.
+
+**Tooling note:** Storybook's docs _body_ content (MDX pages and autodocs prop tables alike)
+renders inside `#storybook-preview-iframe`, the same iframe used for individual story canvases —
+not directly in the manager UI's own DOM. Direct `?path=` deep-linking into a freshly-served
+static build was unreliable (hit a stale "No Preview" state) — navigating via an actual sidebar
+click, matching how a real visitor would browse, worked reliably. Worth remembering for any future
+verification script against this Storybook build.
