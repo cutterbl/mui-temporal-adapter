@@ -19,15 +19,16 @@ const preview: Preview = {
     controls: { expanded: true },
     // Storybook's actual default sidebar order is "configuration order" (roughly, the order
     // stories were discovered/imported) — *not* alphabetical by title, despite that being an
-    // easy assumption. The 8 `stories/docs/*.mdx` pages are each titled with a leading number
-    // (`'Docs/1. Introduction'`, `'Docs/2. Getting Started'`, …) specifically so they read in
-    // order in the sidebar; without this, they show up in whatever order Storybook happened
-    // to discover the files in instead. `'alphabetical'` sorts by the title string, which
-    // sorts those numbered titles correctly (single digits, 1–8, so no "10 before 2"
-    // lexicographic gotcha to worry about).
+    // easy assumption. `method: 'alphabetical'` handles the 8 `stories/docs/*.mdx` pages: each
+    // is titled with a leading number (`'Docs/1. Introduction'`, `'Docs/2. Getting Started'`,
+    // …) specifically so they read in order (single digits, 1–8, so no "10 before 2"
+    // lexicographic gotcha to worry about). `order` overrides that alphabetical fallback for
+    // the top-level groups themselves, which don't read naturally in plain alphabetical order
+    // ("How It Works" would otherwise land second, right after "Docs").
     options: {
       storySort: {
         method: 'alphabetical',
+        order: ['Docs', 'Setup', 'Locales', 'Pickers', 'How It Works'],
       },
     },
   },

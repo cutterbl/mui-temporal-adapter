@@ -22,10 +22,8 @@ export const ForcedPolyfill: Story = {
     docs: {
       description: {
         story:
-          "This one pretends your browser doesn't have Temporal built in yet, so you can watch " +
-          'the automatic backup plan kick in. Everything below still works exactly the same — ' +
-          "the calendar is running on the small backup copy of Temporal, not the browser's own " +
-          "built-in version, and you'd never know the difference just by using it.",
+          'Here we force lazy loading of the Temporal polyfill, to test that loading works as ' +
+          "intended when needed. You won't do any of this yourself.",
       },
     },
   },
@@ -37,10 +35,8 @@ export const ForcedWeekInfoFallback: Story = {
     docs: {
       description: {
         story:
-          "This one pretends the browser doesn't know which day each region's calendar week " +
-          'starts on (a separate, newer piece of browser support from Temporal itself), so you ' +
-          'can watch the small built-in backup table take over instead. The calendar below ' +
-          'still starts on the correct day for its locale.',
+          'Here we force lazy loading of the first-day-of-week fallback, to test that loading ' +
+          "works as intended when needed. You won't do any of this yourself.",
       },
     },
   },
@@ -52,8 +48,8 @@ export const BothForced: Story = {
     docs: {
       description: {
         story:
-          'Both backup plans running at once — the least capable environment this package ' +
-          'supports, and everything still works correctly.',
+          'Here we force lazy loading of both polyfills at once, to test that loading works as ' +
+          "intended when needed. You won't do any of this yourself.",
       },
     },
   },
