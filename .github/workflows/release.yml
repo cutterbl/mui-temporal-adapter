@@ -48,9 +48,27 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Trusted Publishing (OIDC) needs npm CLI >= 11.5.1; don't rely on whatever ships with
-      # the Node runtime image.
+      # the Node runtime image. `npm install -g npm@latest` alone isn't enough to trust blindly —
+      # a prior run got a misleading `ENEEDAUTH` from the actual `npm publish` subprocess despite
+      # @semantic-release/npm's own separate OIDC preflight check succeeding moments earlier, a
+      # documented npm CLI gotcha (npm/cli#9088) usually caused by the *upgraded* npm not actually
+      # being what's resolved on PATH for later steps. Prepend its real global bin dir to
+      # GITHUB_PATH explicitly and print the version that's actually resolved, so this either
+      # provably fixes it or gives a real diagnostic instead of guessing again. See DECISIONS.md.
       - name: Ensure a recent enough npm for OIDC/Trusted Publishing
-        run: npm install -g npm@latest
+        run: |
+          npm install -g npm@latest
+          npm_bin_dir="$(npm config get prefix)/bin"
+          echo "$npm_bin_dir" >> "$GITHUB_PATH"
+          echo "npm just installed at $npm_bin_dir, version: $("$npm_bin_dir/npm" --version)"
+
+      # GITHUB_PATH edits only take effect in later steps, not the one that wrote them — this
+      # step is what actually confirms what `npm publish` (spawned during the Release step below)
+      # will resolve.
+      - name: Verify the npm version later steps will actually use
+        run: |
+          echo "npm resolved at: $(command -v npm)"
+          echo "npm version: $(npm --version)"
 
       - name: Configure git identity for the release commit
         run: |
