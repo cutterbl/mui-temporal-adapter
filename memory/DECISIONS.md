@@ -815,3 +815,17 @@ user asked for.
 were manual, UI-only steps. Re-checked: `gh` is already authenticated as the repo owner
 (`cutterbl`) with `repo`+`workflow` scopes, which is sufficient to set both via `gh api` directly —
 only the npm-side steps above are genuinely credential-gated and manual.
+
+### Pages custom domain: `cutterscrossing.com`, not `cutterbl.github.io` (Milestone 9)
+
+**Finding:** enabling Pages via `gh api repos/.../pages` (`build_type: workflow`) came back with
+`html_url: "http://cutterscrossing.com/mui-temporal-adapter/"`, not the `cutterbl.github.io` URL
+`README.md` had documented since Milestone 8 — the account has a custom domain attached, inherited
+by this repo's Pages site, initially serving over plain HTTP (`https_enforced: false`).
+**Decision:** confirmed via direct question — keep the custom domain (intentional), rather than
+clearing it back to the default `github.io` URL. Enabled `https_enforced: true` via the same API
+(the domain's certificate was already `approved`, so this took effect immediately — site now
+resolves at `https://cutterscrossing.com/mui-temporal-adapter/`); updated all four
+`cutterbl.github.io` references in `README.md` to match. No Storybook/Vite build config changes
+needed — the repo subpath (`/mui-temporal-adapter/`) is unchanged, only the domain differs, and
+the static build already uses relative asset paths.
