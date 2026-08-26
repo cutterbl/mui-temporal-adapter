@@ -273,20 +273,28 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
 - [x] `.github/workflows/ci-checks.yml` (reusable `workflow_call`)
 - [x] `.github/workflows/validate.yml` (calls ci-checks.yml, separate storybook-tests job,
       coverage-comment job via `davelosert/vitest-coverage-report-action`)
-- [ ] `.github/workflows/release.yml` — **deliberately held back**; see `DECISIONS.md`'s "First
-      published version" entry for why (must not fire before the npm-side manual setup below)
 - [x] `.github/workflows/storybook-deploy.yml` (`workflow_run` off "Release" + manual dispatch)
 - [x] `vitest.config.ts`: added `coverage.reporter: ['text', 'json-summary', 'json']` — required
       by the coverage-comment action, wasn't needed before this milestone
-- [ ] One-time setup: manual npm placeholder publish (throwaway pre-1.0 version, never git-tagged)
-- [ ] One-time setup: npm Trusted Publisher configured against `release.yml`
-- [ ] One-time setup: GitHub Pages source = "GitHub Actions" (via `gh api` — see `DECISIONS.md`,
-      this turned out not to need the npmjs.com-style manual UI flow)
-- [ ] One-time setup: branch protection on `main` requiring the `validate` check (via `gh api`)
-- [ ] PR opened `feat/initial-implementation` → `main` — doubles as the "prove validate.yml works"
-      check and the actual integration merge (no separate throwaway PR needed — see `DECISIONS.md`)
-- [ ] Merge; then the manual npm steps above; then `release.yml` added in a follow-up commit —
-      _that_ push is what produces the real first `1.0.0` release + npm publish + Pages deploy
+- [x] One-time setup: branch protection on `main` requiring both `ci-checks` and
+      `Storybook interaction tests` (via `gh api`)
+- [x] One-time setup: GitHub Pages source = "GitHub Actions" (via `gh api`) — surfaced a real,
+      unexpected finding: the account has a `cutterscrossing.com` custom domain that Pages
+      inherited instead of the default `cutterbl.github.io`; kept it (user's explicit choice),
+      enabled `https_enforced`, updated all 4 README references — see `DECISIONS.md`
+- [x] PR #1 opened `feat/initial-implementation` → `main`, proved `validate.yml` end-to-end
+      (all three checks passing twice, incl. the coverage PR comment), merged as a real merge
+      commit (`bde1b6b`) — no separate throwaway PR needed, this doubled as it
+- [x] One-time setup: manual npm placeholder publish (`0.0.1`, `--provenance=false` override
+      needed locally since `publishConfig.provenance: true` can't auto-detect a CI provider
+      outside actual CI — see `DECISIONS.md`), never git-tagged, version reverted locally after
+- [x] One-time setup: npm Trusted Publisher configured against `release.yml` (owner `cutterbl`,
+      repo `mui-temporal-adapter`) — also enabled npm's strictest 2FA publishing-access setting
+      ("require 2FA, disallow bypass tokens"), confirmed via npm's own docs this doesn't affect
+      OIDC/Trusted Publisher auth, only classic token publishing — see `DECISIONS.md`
+- [x] `.github/workflows/release.yml` added on its own branch (`chore/add-release-workflow`),
+      per the ordering above — this is the push that will produce the real first `1.0.0`
+      release + npm publish + Pages deploy once merged
 
 ## Milestone 10 — Documentation consistency pass
 

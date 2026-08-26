@@ -829,3 +829,37 @@ resolves at `https://cutterscrossing.com/mui-temporal-adapter/`); updated all fo
 `cutterbl.github.io` references in `README.md` to match. No Storybook/Vite build config changes
 needed — the repo subpath (`/mui-temporal-adapter/`) is unchanged, only the domain differs, and
 the static build already uses relative asset paths.
+
+### Manual npm placeholder publish: `--provenance=false` override required (Milestone 9)
+
+**Finding:** `npm publish --access public` for the throwaway placeholder failed outright —
+`EUSAGE ... Automatic provenance generation not supported for provider: null` —
+because `package.json`'s `publishConfig.provenance: true` (set for the real automated release)
+tries to generate provenance unconditionally, and provenance can only be generated from a
+supported CI provider (GitHub Actions, GitLab CI); there's no CI context on a local machine.
+**Fix:** `npm publish --access public --provenance=false` for this one manual invocation only —
+overrides `publishConfig` for that single command without editing `package.json`.
+`release.yml`'s real publish runs inside GitHub Actions, where provenance generates normally.
+
+### `release.yml`: npm CLI version + git identity (Milestone 9)
+
+Two details needed beyond the plan's original sketch, both added to `release.yml`:
+
+- **npm CLI >= 11.5.1 required for OIDC/Trusted Publishing** (confirmed via search) — not
+  guaranteed to be whatever ships with the `node@24` runtime image, so an explicit
+  `npm install -g npm@latest` step runs before `pnpm run release`.
+- **Git identity for the `@semantic-release/git` commit-back** — `@semantic-release/git` doesn't
+  set `user.name`/`user.email` itself; a step sets both explicitly to `github-actions[bot]`
+  (GitHub's own recognized bot identity) before the release step runs, to avoid a bare git
+  "Author identity unknown" failure on the changelog/version commit-back to `main`.
+
+### npm 2FA publishing-access setting: strictest option confirmed compatible with OIDC
+
+**Finding:** npm's package "Publishing access" setting offers "Require two-factor authentication
+and disallow bypass 2FA tokens" (the strictest option) — confirmed via npm's own docs this does
+**not** affect Trusted Publisher/OIDC auth, only classic long-lived token publishing; OIDC tokens
+are short-lived and workflow-specific, not a "bypass 2FA" token in the sense that setting targets.
+npm's own docs recommend pairing Trusted Publishers with this strictest setting.
+**Decision:** enabled it on the package (user's choice, confirmed via direct question) — no impact
+on `release.yml`'s ability to publish going forward; only affects any _future_ manual
+`npm publish` from a terminal, which would now require 2FA each time (expected/desired).
