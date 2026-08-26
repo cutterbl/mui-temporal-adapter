@@ -262,18 +262,31 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
 
 ## Milestone 9 — Commit hygiene + CI/CD
 
-- [ ] `commitlint.config.js`
-- [ ] `.lintstagedrc.json`
-- [ ] `.husky/commit-msg`, `.husky/pre-commit`, `package.json` `prepare` script
-- [ ] `.releaserc.json` (semantic-release plugin pipeline)
-- [ ] `.github/workflows/ci-checks.yml`
-- [ ] `.github/workflows/validate.yml`
-- [ ] `.github/workflows/release.yml`
-- [ ] `.github/workflows/storybook-deploy.yml`
-- [ ] One-time setup: npm Trusted Publisher configured — log any sequencing caveat in `DECISIONS.md`
-- [ ] One-time setup: GitHub Pages source = "GitHub Actions"
-- [ ] One-time setup: branch protection on `main` requiring the `validate` check
-- [ ] Throwaway PR opened to confirm the full loop end-to-end (see Verification in `PLAN.md`)
+- [x] `commitlint.config.js`
+- [x] `.lintstagedrc.json`
+- [x] `.husky/commit-msg`, `.husky/pre-commit` (`prepare` script + all devDependencies were
+      already in `package.json` from an earlier scaffold pass — only the hook scripts themselves
+      were missing). Verified live: a non-conventional message is rejected, lint-staged runs
+      ESLint --fix + Prettier --write on staged files.
+- [x] `.releaserc.json` (semantic-release plugin pipeline: commit-analyzer, release-notes-generator,
+      changelog, npm, git — `[skip ci]` message — github)
+- [x] `.github/workflows/ci-checks.yml` (reusable `workflow_call`)
+- [x] `.github/workflows/validate.yml` (calls ci-checks.yml, separate storybook-tests job,
+      coverage-comment job via `davelosert/vitest-coverage-report-action`)
+- [ ] `.github/workflows/release.yml` — **deliberately held back**; see `DECISIONS.md`'s "First
+      published version" entry for why (must not fire before the npm-side manual setup below)
+- [x] `.github/workflows/storybook-deploy.yml` (`workflow_run` off "Release" + manual dispatch)
+- [x] `vitest.config.ts`: added `coverage.reporter: ['text', 'json-summary', 'json']` — required
+      by the coverage-comment action, wasn't needed before this milestone
+- [ ] One-time setup: manual npm placeholder publish (throwaway pre-1.0 version, never git-tagged)
+- [ ] One-time setup: npm Trusted Publisher configured against `release.yml`
+- [ ] One-time setup: GitHub Pages source = "GitHub Actions" (via `gh api` — see `DECISIONS.md`,
+      this turned out not to need the npmjs.com-style manual UI flow)
+- [ ] One-time setup: branch protection on `main` requiring the `validate` check (via `gh api`)
+- [ ] PR opened `feat/initial-implementation` → `main` — doubles as the "prove validate.yml works"
+      check and the actual integration merge (no separate throwaway PR needed — see `DECISIONS.md`)
+- [ ] Merge; then the manual npm steps above; then `release.yml` added in a follow-up commit —
+      _that_ push is what produces the real first `1.0.0` release + npm publish + Pages deploy
 
 ## Milestone 10 — Documentation consistency pass
 

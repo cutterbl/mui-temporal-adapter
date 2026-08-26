@@ -778,6 +778,40 @@ and 5–25 enabled, no navigation needed.
 
 ## Open spikes (to be resolved during implementation, logged here once settled)
 
-- **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC
-  trusted-publishing flow now supports establishing trust before a package's first publish, or
-  whether one manual `npm publish --access public` is still required first. — **UNRESOLVED**
+### npm Trusted Publisher first-publish sequencing — RESOLVED (Milestone 9)
+
+**Finding:** confirmed via npm's own docs (docs.npmjs.com/trusted-publishers) that the Trusted
+Publisher settings only exist on a package's settings page on npmjs.com, which only exists once
+the package has been published at least once — there is no way to pre-register OIDC trust for a
+name that isn't on the registry yet (unlike PyPI's equivalent flow). `@cxing/mui-temporal-adapter`
+404s on the registry as of this writing, so a one-time manual publish is unavoidable.
+
+**Decision:** the user runs one manual `npm publish --access public` from their own `npm login`
+session, at a deliberately-low throwaway version (e.g. `0.0.1`) that is **never git-tagged** —
+semantic-release only ever looks at git tags to decide "was there a previous release," never the
+npm registry itself, so this placeholder stays invisible to it. Only after that placeholder exists
+can the user configure the npm Trusted Publisher (GitHub owner `cutterbl`, repo
+`mui-temporal-adapter`, workflow filename `release.yml`, "npm publish" allowed, no environment).
+
+### First published version: `1.0.0`, not `0.1.0` — RESOLVED (Milestone 9)
+
+**Finding:** semantic-release does not read `package.json`'s `version` field at all — it computes
+the next version purely from git tags. With no prior tag, its first release is **hard-coded to
+`1.0.0`**, a deliberate, documented project stance (0.x-range support is explicitly out of scope
+per semantic-release's own maintainers — see
+[discussion #3240](https://github.com/semantic-release/semantic-release/discussions/3240) and
+[issue #268](https://github.com/semantic-release/semantic-release/issues/268)); there is no
+supported config option to start below `1.0.0` without forking the tool. `package.json`'s current
+`"0.1.0"` is scaffold only — `@semantic-release/npm` overwrites it at release time regardless.
+**Decision:** confirmed via direct question — accept `1.0.0` as the real first automated release
+rather than hand-rolling a version override. Kept the ordering clean: `release.yml` is deliberately
+held out of the `feat/initial-implementation` → `main` merge (see below) so that merge can't
+prematurely fire a release before the npm-side manual setup above is complete; it's added in a
+small follow-up commit once that setup is done, and _that_ push is what actually produces the
+real `1.0.0` release, npm publish, and Pages deploy — the "one push does everything" moment the
+user asked for.
+
+**Also corrected:** the original plan assumed GitHub Pages source and branch protection on `main`
+were manual, UI-only steps. Re-checked: `gh` is already authenticated as the repo owner
+(`cutterbl`) with `repo`+`workflow` scopes, which is sufficient to set both via `gh api` directly —
+only the npm-side steps above are genuinely credential-gated and manual.
