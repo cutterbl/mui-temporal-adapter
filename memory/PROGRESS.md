@@ -343,6 +343,9 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       with `method: 'alphabetical'`, which still governs the numbered `Docs` sub-pages);
       simplified the three Lazy Polyfill Environment stories' descriptions to a short, consistent
       plain-English template. Both verified against the real built site — see `DECISIONS.md`
+- [x] Post-completion polish (user-directed): linked out to MDN's Temporal reference from
+      `Introduction.mdx`, `GettingStarted.mdx`, and `Glossary.mdx` — verified each rendered link
+      and that the MDN URL itself resolves — see `DECISIONS.md`
 
 ## Notes / blockers
 

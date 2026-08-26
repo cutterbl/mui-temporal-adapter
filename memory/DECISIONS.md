@@ -1057,3 +1057,18 @@ mechanism exists in each case, rather than just what's being demonstrated). Repl
 consistent template per the user's own wording: "Here we force lazy loading of \[X], to test that
 loading works as intended when needed. You won't do any of this yourself." Verified the new text
 renders correctly against the real built site.
+
+### MDN Temporal link added to Introduction, Getting Started, Glossary (user-directed)
+
+**Decision:** linked out to
+[MDN's Temporal reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)
+in three places, reusing the exact URL `TimeZones.mdx` already cited (kept a single canonical
+source instead of risking drift between two different MDN link targets):
+
+- `Introduction.mdx` — the first bolded mention of **Temporal** itself now links directly to it.
+- `GettingStarted.mdx` — a closing note after step 3, for anyone who wants the full API reference
+  once they have a working picker.
+- `Glossary.mdx` — the `### Temporal` entry itself, the most natural canonical spot, alongside its
+  existing internal link to the Introduction page.
+  Verified each link's actual rendered `href` against the real built site via Playwright, and that
+  the MDN URL itself resolves (`200`), rather than trusting the citation blindly.
