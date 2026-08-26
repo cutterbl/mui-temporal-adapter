@@ -682,6 +682,52 @@ true, provider: playwright(), instances: [{ browser: 'chromium' }] }`. Required 
   second, redundant provider layer, harmless here since it's demo-only code, not part of the
   published package.
 
+### Real, genuine packaging bug found — `TemporalLocalizationProvider` bundled a second copy of MUI's `LocalizationProvider` (Milestone 8)
+
+**Finding:** `vite.config.ts`'s `rollupOptions.external` listed package names as plain strings
+(`'@mui/x-date-pickers'`, `'react'`, etc.) — but `TemporalLocalizationProvider.tsx`'s own source
+imports from the _subpath_ `@mui/x-date-pickers/LocalizationProvider`, not the bare package name.
+Rollup's `external` option does exact-string matching against the literal import specifier, so
+that plain-string entry never matched this actual import at all — Rollup dutifully bundled MUI's
+own `LocalizationProvider` component (and whatever it transitively pulled in, including
+`AdapterDayjs`) straight into `dist/TemporalLocalizationProvider-*.js` (105KB, for what should
+have been a ~1KB wrapper). This went completely undetected through every earlier milestone: every
+test/story in this repo either imports `AdapterTemporal`/`createTemporalAdapter` directly (no
+`LocalizationProvider` re-export at all) or resolves `TemporalLocalizationProvider` straight from
+`src/` via Vite's dev-server module graph (Storybook, the `component` Vitest project) — never
+through Rollup's production bundler, so the bug had no way to surface until something actually
+consumed the _built_ `dist/` output through a real external app.
+
+**Symptom, once actually installed and rendered in a real consumer app:** MUI X error #149,
+verbatim: _"Can not find the date and time pickers localization context... This can also happen
+if you are bundling multiple versions of the `@mui/x-date-pickers` package"_ — exactly what was
+happening. A real consuming app's own `<DatePicker>` (using its own installed copy of
+`@mui/x-date-pickers`) couldn't see the React Context provided by our bundled copy of
+`LocalizationProvider`, since bundling created a second, separately-scoped instance of that
+Context object.
+
+**Fix:** changed `external` from plain strings to regexes matching the package name _and_ any
+subpath (`/^@mui\/x-date-pickers/`, `/^@mui\/material/`, `/^@emotion\/react/`,
+`/^@emotion\/styled/`, `/^react-dom/`, plus exact-match `/^react$/`/`/^react\/jsx-runtime$/`).
+Rebuilt: the same chunk dropped from 105798 bytes to 743 bytes and now correctly `import`s
+`@mui/x-date-pickers/LocalizationProvider` rather than bundling it.
+**Verification (this is the actual Milestone 8 packaging smoke test):** `pnpm pack`, installed the
+tarball into a scratch Vite + React + TypeScript app (built fresh via `pnpm create vite`, real
+`@mui/x-date-pickers`/`@mui/material`/`@emotion/*` deps installed normally, not linked from this
+repo), and drove it with Playwright against a real, current Chromium (151.0.7922.34 — confirmed to
+have native `Temporal` support, so this genuinely exercises the native path, not just the
+polyfill). Confirmed, in that real external app: `createTemporalAdapter`'s subpath default-export
+import and the root-barrel named-export import resolve to the exact same function
+(`Object.is`-equal); a `DatePicker` built manually via `createTemporalAdapter()` +
+`LocalizationProvider` renders and holds a real value; `TemporalLocalizationProvider` renders a
+working `DatePicker` both with native support and with `forcePolyfill` forced on; a `DateCalendar`
+under `TemporalLocalizationProvider` with `forceWeekInfoFallback` forced on and `adapterLocale="fr-FR"`
+renders with genuinely correct Monday-first French weekday headers (`L,M,M,J,V,S,D`); and the
+`tsc -b` step of that consumer app's own build (using its own tsconfig referencing our shipped
+`.d.ts` files) type-checks cleanly. Zero console/page errors in the final run. This is exactly the
+class of bug (subpath-vs-bare-name external mismatch) this manual step exists to catch — no
+automated test in this repo runs through Rollup's actual bundling of `dist/`.
+
 ## Open spikes (to be resolved during implementation, logged here once settled)
 
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC

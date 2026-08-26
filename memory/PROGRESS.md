@@ -221,10 +221,34 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
 
 ## Milestone 8 — README + packaging smoke test
 
-- [ ] `README.md` (usage, async-factory rationale, browser support matrix, ESM-only note)
-- [ ] `pnpm pack` + install into a scratch Vite+React app
-- [ ] Confirm subpath default-export imports work
-- [ ] Confirm root-barrel named-export imports work
+- [x] `README.md` — install, ESM-only callout, both bootstrap options (convenience component /
+      manual factory), async-factory rationale, browser support matrix, TypeScript note, API
+      reference table, link out to the Storybook docs site for the full beginner guide
+- [x] `LICENSE` (MIT) — not originally itemized, added alongside the README since
+      `package.json` already declared `"license": "MIT"` with no license file backing it
+- [x] Real, genuine packaging bug found & fixed: `vite.config.ts`'s `external` list used plain
+      package-name strings, which don't match the _subpath_ imports
+      (`@mui/x-date-pickers/LocalizationProvider`) `TemporalLocalizationProvider.tsx` actually
+      uses — MUI's own `LocalizationProvider` (105KB) was being bundled straight into
+      `dist/TemporalLocalizationProvider-*.js`, creating a second React Context instance a
+      real consuming app's `<DatePicker>` couldn't see (MUI X error #149). Fixed with
+      regex-based external matching; full writeup in `DECISIONS.md`. Never caught by any
+      test/story in this repo, since none of them consume the built `dist/` output through
+      Rollup's bundler — exactly what this milestone's manual smoke test exists to catch.
+- [x] `pnpm pack` + installed into a scratch Vite + React + TypeScript app (`pnpm create vite`,
+      real deps installed normally); driven with Playwright against a real, current Chromium
+      (confirmed to have native Temporal support)
+- [x] Confirmed subpath default-export and root-barrel named-export imports resolve to the
+      exact same function (`Object.is`-equal)
+- [x] Confirmed a `DatePicker` built manually via `createTemporalAdapter()` renders and holds a
+      real value (native Temporal); confirmed `TemporalLocalizationProvider` renders correctly
+      both natively and with `forcePolyfill` forced on; confirmed a `DateCalendar` under
+      `TemporalLocalizationProvider` with `forceWeekInfoFallback` forced on and
+      `adapterLocale="fr-FR"` renders genuinely correct Monday-first French weekday headers —
+      zero console/page errors. Consumer app's own `tsc -b` (against our shipped `.d.ts`
+      files) type-checks cleanly.
+- [x] `tsc --noEmit`, `pnpm lint`, `pnpm format:check`, `pnpm test:all` (103 tests), and
+      `pnpm build` on the main repo all re-verified clean after the `vite.config.ts` fix
 
 ## Milestone 9 — Commit hygiene + CI/CD
 

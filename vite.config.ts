@@ -46,14 +46,28 @@ export default defineConfig({
       fileName: (_format, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
+      // Regexes, not plain strings: `TemporalLocalizationProvider.tsx` imports from the
+      // *subpath* `@mui/x-date-pickers/LocalizationProvider`, not the bare package name —
+      // Rollup's `external` only does exact string matching, so the plain-string form used
+      // here originally matched none of these actual import specifiers and silently bundled
+      // MUI's own `LocalizationProvider` (plus whatever it transitively pulled in, e.g.
+      // `AdapterDayjs`) straight into `dist/TemporalLocalizationProvider-*.js`. That created
+      // a second, separately-scoped copy of `LocalizationProvider`'s React Context — a real
+      // consuming app's own `<DatePicker>` (using *its* copy of `@mui/x-date-pickers`)
+      // couldn't see context provided by our bundled copy, throwing MUI X error #149 ("Can
+      // not find the date and time pickers localization context... This can also happen if
+      // you are bundling multiple versions of the `@mui/x-date-pickers` package" — exactly
+      // what was happening). Caught via the Milestone 8 packaging smoke test against a real
+      // external consumer app, not by any test/story in this repo, since none of those
+      // exercise the actual built `dist/` output through Rollup's bundler. See `DECISIONS.md`.
       external: [
-        'react',
-        'react-dom',
-        'react/jsx-runtime',
-        '@mui/material',
-        '@mui/x-date-pickers',
-        '@emotion/react',
-        '@emotion/styled',
+        /^react$/,
+        /^react-dom/,
+        /^react\/jsx-runtime$/,
+        /^@mui\/material/,
+        /^@mui\/x-date-pickers/,
+        /^@emotion\/react/,
+        /^@emotion\/styled/,
       ],
       // `temporal-polyfill` and the week-info fallback table stay un-externalized so
       // their dynamic `import()`s land as genuine on-demand chunks in `dist/`, shared
