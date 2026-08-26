@@ -1,6 +1,6 @@
 {
   "name": "@cxing/mui-temporal-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Temporal-API-backed dateAdapter for @mui/x-date-pickers, with on-demand polyfill fallbacks for browsers lacking native Temporal or locale week-info support.",
   "type": "module",
   "license": "MIT",

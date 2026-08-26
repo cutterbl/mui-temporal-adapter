@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/cutterbl/mui-temporal-adapter/compare/v1.0.0...v1.0.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **ci:** stop release.yml from re-running validation already done pre-merge ([f7ba2fb](https://github.com/cutterbl/mui-temporal-adapter/commit/f7ba2fb9610ff57f712cb9363a4334e80ea55a92))
+
 # 1.0.0 (2026-08-26)
 
 
