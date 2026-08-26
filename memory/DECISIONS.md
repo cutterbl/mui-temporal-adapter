@@ -630,6 +630,58 @@ index can actually be out of range at those call sites) are provably unreachable
 stay uncovered — accepted as-is rather than restructuring working code to chase literal 100%; they
 don't block the aggregate threshold.
 
+### Real bug — `tsconfig.json`'s bare `.storybook` include entry silently checked nothing (Milestone 7)
+
+**Finding:** `tsconfig.json`'s `include` array had `.storybook` listed as a bare directory name
+(alongside `src`, `test`, `stories`, which all work fine that way) since Milestone 0. Once
+`.storybook/*.ts(x)` files actually existed to test this, a deliberately-introduced type error in
+`.storybook/main.ts` was **not** caught by `tsc --noEmit` — the directory was silently
+contributing zero files to the program, `--noEmit` was "clean" only because nothing was being
+checked, not because the files were correct. `eslint`'s type-aware rules independently surfaced
+the same gap as a parser error ("file was not found in any of the provided project(s)") the moment
+`.storybook/*.ts(x)` files existed for it to try to lint. Root cause: TypeScript's own
+`include`-glob handling excludes dot-prefixed directories/files by default — true even for
+`src`/`test`/`stories` in principle, but irrelevant for those since they don't start with a dot;
+`.storybook` does, so the bare-directory-name shorthand (which works for non-dot directories)
+silently failed to include it.
+**Fix:** changed the `.storybook` entry to the explicit glob `.storybook/**/*` — TypeScript does
+honor an explicit wildcard pattern for a dot-prefixed directory, even though it won't
+auto-expand a bare dot-prefixed directory name the way it does for a plain one. Verified via the
+same deliberate-error probe (now correctly caught) before and after.
+
+### Storybook 10.5 wiring notes (Milestone 7)
+
+- **`@storybook/addon-vitest`'s `setProjectAnnotations` pattern is now unnecessary.** `PLAN.md`
+  called for a `.storybook/vitest.setup.ts` wiring `setProjectAnnotations(preview)` into the
+  `storybook` Vitest project — the documented pattern for older `@storybook/addon-vitest`
+  releases. Writing it anyway and running `pnpm test:storybook` surfaced this version's own
+  runtime notice: "Since Storybook 10.3, `@storybook/addon-vitest` applies these automatically…
+  You can safely remove the `setProjectAnnotations` call from your setup file, or remove the file
+  entirely." Removed the file entirely (it had no other custom code) and dropped the `setupFiles`
+  entry for the `storybook` Vitest project accordingly — `.storybook/preview.tsx`'s decorator
+  (which wraps every story in `TemporalLocalizationProvider`/`<Suspense>`) is confirmed still
+  applied to stories run under Vitest with the file gone, per the addon's own automatic behavior.
+- **`vitest.config.ts`'s `storybook` project** follows `@storybook/addon-vitest`'s own bundled
+  `vitest.config.4.template.ts` (matched to our installed Vitest 4.x) verbatim in shape:
+  `storybookTest({ configDir: '.storybook' })` as a plugin, `browser: { enabled: true, headless:
+true, provider: playwright(), instances: [{ browser: 'chromium' }] }`. Required a new
+  `@vitest/browser-playwright` devDependency (distinct from the already-installed
+  `@vitest/browser`) and a matching local Playwright Chromium binary
+  (`pnpm exec playwright install chromium` — the previously-cached revision didn't match this
+  project's pinned Playwright version). `pnpm test:storybook` runs every story as a real
+  interaction test in an actual headless Chromium instance, not a visual-only smoke check —
+  5 story files, 10 stories, all green.
+- **Per-story force-flags without an extra per-story wrapper.** `LazyPolyfillEnvironment.stories.tsx`
+  needs `forcePolyfill`/`forceWeekInfoFallback` set per-story, and `LocaleWeekStart.stories.tsx`
+  needs an _interactively controllable_ locale (via Storybook's Controls panel). Solved two
+  different ways deliberately: the former reads a `parameters.temporal` object (static per story,
+  fine since force-flags are demo-only, not meant to be end-user-adjustable) via the global
+  decorator in `preview.tsx`; the latter uses a small local, non-exported demo component whose
+  `locale` is a genuine component **prop** (so Storybook's Controls can drive it live) wrapped in
+  its own `TemporalLocalizationProvider`, nested inside the global decorator's own instance — a
+  second, redundant provider layer, harmless here since it's demo-only code, not part of the
+  published package.
+
 ## Open spikes (to be resolved during implementation, logged here once settled)
 
 - **npm Trusted Publisher first-publish sequencing** (Milestone 9): confirm whether npm's OIDC

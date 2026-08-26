@@ -1,0 +1,64 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/5. Time Zones" />
+
+# Time Zones
+
+## What's a time zone, and why does it matter?
+
+A **time zone** is the rule a place uses to decide what the clock should say at any given
+moment — it's why it can be 3 PM in New York while it's already 8 PM in London, at the exact
+same instant. If your app shows a specific moment (like a meeting time) to people in different
+places, showing the wrong time zone can mean showing the wrong time entirely — someone could
+show up an hour early or late.
+
+## Every value from this package already knows its time zone
+
+This is one of the nicer parts of building on Temporal: every date/time value this package
+hands you already carries its own time zone as part of the value — there's no separate step
+where you have to remember to track it yourself.
+
+## Picking which time zone a picker uses
+
+Every picker component accepts a `timezone` prop:
+
+```tsx
+<DateTimePicker timezone="America/Los_Angeles" label="Appointment (Pacific)" />
+<DateTimePicker timezone="UTC" label="Appointment (UTC)" />
+<DateTimePicker timezone="system" label="Appointment (visitor's own time zone)" />
+```
+
+- A specific zone name (like `'America/Los_Angeles'` or `'Asia/Tokyo'`) always shows that same
+  zone's time, no matter where the visitor is.
+- `'UTC'` is a single, place-independent reference time zone — useful when you want everyone to
+  see the exact same clock time regardless of where they are.
+- `'system'` (also the default if you don't set `timezone` at all) uses whatever time zone the
+  visitor's own device is set to.
+
+## Reading and setting values yourself
+
+If you're controlling a picker's value yourself (rather than letting it manage its own state),
+reach for the ambient `Temporal` object directly — it's globally available once your app has
+finished the setup step described on the [Getting Started](/docs/docs-2-getting-started--docs)
+page, exactly as [MDN's own Temporal documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)
+describes it:
+
+```tsx
+import { useState } from 'react';
+
+const [value, setValue] = useState(Temporal.Now.zonedDateTimeISO('America/New_York'));
+
+<DatePicker
+  value={value}
+  onChange={setValue}
+  minDate={Temporal.PlainDate.from('2026-01-01').toZonedDateTime('America/New_York')}
+  maxDate={Temporal.PlainDate.from('2026-12-31').toZonedDateTime('America/New_York')}
+/>;
+```
+
+One important ordering rule: code like the example above only works _after_ the setup step
+from [Getting Started](/docs/docs-2-getting-started--docs) has finished — for example, inside
+a component rendered underneath `TemporalLocalizationProvider`, or after the `await
+createTemporalAdapter()` line if you're using that option. Reaching for `Temporal.*` any
+earlier than that is one of the few genuine gotchas in this package — see the
+[Troubleshooting](/docs/docs-7-troubleshooting--docs) page if you run into it.

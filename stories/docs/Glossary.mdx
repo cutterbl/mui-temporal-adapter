@@ -1,0 +1,52 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/8. Glossary" />
+
+# Glossary
+
+Plain-English definitions for every term used across these docs pages, gathered in one place.
+
+### Temporal
+
+JavaScript's newer, built-in toolkit for working with dates and times — designed to fix a lot
+of the confusing, error-prone parts of the language's much older `Date` object. This package is
+built directly on top of it. See the [Introduction](/docs/docs-1-introduction--docs) page.
+
+### Adapter
+
+A small piece of connective code that lets a general-purpose tool (like MUI's date pickers)
+work with a specific date/time library (like Temporal) it wasn't originally written for. This
+whole package _is_ one such adapter.
+
+### Locale
+
+The part that tells a website which language or country style to use — including things like
+which language to show text in, and (relevant to this package) which day a calendar week
+starts on. Usually written as a short code, like `'en-US'` or `'fr-FR'`. See
+[Locales & First Day of the Week](/docs/docs-4-locales-first-day-of-the-week--docs).
+
+### Time zone
+
+The rule a place uses to decide what a clock should read at a given moment — the reason it can
+be a different hour in two different cities at the exact same instant. See
+[Time Zones](/docs/docs-5-time-zones--docs).
+
+### Polyfill
+
+A small piece of code that fills in a browser feature that isn't built in yet, so it behaves as
+if it were — meant to be temporary, only used by browsers that actually need it. This package
+uses one for Temporal itself, when a visitor's browser doesn't have it yet. See
+[How the Fallbacks Work](/docs/docs-6-how-the-fallbacks-work--docs).
+
+### ESM (ECMAScript Modules)
+
+The modern, standard way JavaScript code is organized into files using `import`/`export`
+statements — as opposed to the older CommonJS style (`require()`). This package is published
+in ESM form only. See [Troubleshooting](/docs/docs-7-troubleshooting--docs) if that causes an
+issue for your project.
+
+### `Suspense`
+
+A built-in React component for showing a temporary loading state while something (in this
+case, this package's own brief setup step) finishes getting ready. See
+[Getting Started](/docs/docs-2-getting-started--docs).

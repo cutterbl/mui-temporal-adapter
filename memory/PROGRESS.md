@@ -183,21 +183,41 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
 
 ## Milestone 7 — Storybook
 
-- [ ] `.storybook/main.ts` / `preview.tsx` / `vitest.setup.ts`
-- [ ] `DatePicker.stories.tsx`
-- [ ] `TimePicker.stories.tsx`
-- [ ] `DateTimePicker.stories.tsx`
-- [ ] `LazyPolyfillEnvironment.stories.tsx`
-- [ ] `LocaleWeekStart.stories.tsx`
-- [ ] `stories/docs/Introduction.mdx`
-- [ ] `stories/docs/GettingStarted.mdx`
-- [ ] `stories/docs/UsingThePickers.mdx`
-- [ ] `stories/docs/LocalesAndFirstDayOfWeek.mdx`
-- [ ] `stories/docs/TimeZones.mdx`
-- [ ] `stories/docs/HowTheFallbacksWork.mdx`
-- [ ] `stories/docs/Troubleshooting.mdx`
-- [ ] `stories/docs/Glossary.mdx`
-- [ ] Vitest `storybook` project wired; `pnpm test:storybook` runs stories as real assertions
+- [x] Real bug found & fixed: `tsconfig.json`'s bare `.storybook` include entry silently
+      checked zero files (dot-prefixed directories aren't auto-expanded the way plain ones
+      are) — changed to the explicit `.storybook/**/*` glob; see `DECISIONS.md`
+- [x] `.storybook/main.ts` (framework `@storybook/react-vite`, `addon-docs` + `addon-vitest`,
+      `stories` glob covering both `.stories.tsx` and `docs/**/*.mdx`) / `preview.tsx` (global
+      decorator wrapping every story in `Suspense` + `TemporalLocalizationProvider`, reading
+      per-story `parameters.temporal` for the force-flag stories) — **no** `vitest.setup.ts`
+      in the end: `PLAN.md` called for one wiring `setProjectAnnotations`, but this installed
+      version (Storybook 10.3+) applies `preview.tsx`'s annotations to Vitest-run stories
+      automatically and says so directly if a manual call is present anyway; see
+      `DECISIONS.md`
+- [x] `DatePicker.stories.tsx` (Default, WithMinAndMaxDate)
+- [x] `TimePicker.stories.tsx` (Default, TwentyFourHour)
+- [x] `DateTimePicker.stories.tsx` (Default, InAFixedTimeZone)
+- [x] `LazyPolyfillEnvironment.stories.tsx` (ForcedPolyfill, ForcedWeekInfoFallback,
+      BothForced — each via `parameters.temporal`)
+- [x] `LocaleWeekStart.stories.tsx` (SwitchLocale — a small local demo component with a real
+      `locale` prop, driven live by Storybook's Controls panel, per `DECISIONS.md`)
+- [x] `stories/docs/Introduction.mdx`
+- [x] `stories/docs/GettingStarted.mdx`
+- [x] `stories/docs/UsingThePickers.mdx`
+- [x] `stories/docs/LocalesAndFirstDayOfWeek.mdx`
+- [x] `stories/docs/TimeZones.mdx`
+- [x] `stories/docs/HowTheFallbacksWork.mdx`
+- [x] `stories/docs/Troubleshooting.mdx`
+- [x] `stories/docs/Glossary.mdx`
+      — all 8 cross-linked to each other via real generated Storybook doc-entry IDs (verified
+      against `storybook-static/index.json` after a real build, not guessed)
+- [x] Vitest `storybook` project wired (`@storybook/addon-vitest`'s `storybookTest` plugin +
+      Playwright/Chromium browser mode, matching the addon's own bundled Vitest-4 template);
+      new devDependencies `@vitest/browser-playwright` + a locally-installed matching Chromium
+      binary; `pnpm test:storybook` runs every story as a real browser-rendered test — 5 story
+      files, 10 stories, all green
+- [x] `tsc --noEmit`, `pnpm lint`, `pnpm format:check`, `pnpm test:all` (23 files / 103 tests),
+      `pnpm build`, and `pnpm build:storybook` all re-verified clean
 
 ## Milestone 8 — README + packaging smoke test
 
