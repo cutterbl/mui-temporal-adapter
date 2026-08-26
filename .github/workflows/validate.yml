@@ -1,0 +1,66 @@
+name: Validate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ci-checks:
+    name: CI checks
+    uses: ./.github/workflows/ci-checks.yml
+
+  storybook-tests:
+    name: Storybook interaction tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm + Node
+        uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright's Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Storybook stories as real interaction tests
+        run: pnpm run test:storybook
+
+  coverage-comment:
+    name: Post coverage summary to the PR
+    needs: ci-checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm + Node
+        uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Re-run coverage in this job so the json-summary report exists on disk for the
+      # comment action below to read — ci-checks.yml (above) already gated on it passing;
+      # this run is purely to produce the artifact for the comment, not a second gate.
+      - name: Unit + component tests (coverage)
+        run: pnpm run test:coverage
+
+      - name: Post/update the coverage summary comment
+        uses: davelosert/vitest-coverage-report-action@v2

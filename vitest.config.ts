@@ -14,6 +14,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
+      // `json-summary` is required by `davelosert/vitest-coverage-report-action` (the PR
+      // coverage comment in `.github/workflows/validate.yml`); `json` gives it per-file detail
+      // for the comment body; `text` keeps a human-readable summary in local/CI terminal output.
+      reporter: ['text', 'json-summary', 'json'],
       thresholds: {
         branches: 85,
         functions: 90,

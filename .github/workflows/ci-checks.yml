@@ -1,0 +1,42 @@
+name: CI Checks
+
+# Reusable workflow — shared "typecheck + lint + coverage-gated tests + build" sequence,
+# invoked by both validate.yml (PR gate) and release.yml (pre-release gate), so the two
+# never drift out of sync.
+on:
+  workflow_call:
+
+jobs:
+  ci-checks:
+    name: Typecheck, lint, format, coverage, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm + Node
+        uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format check
+        run: pnpm run format:check
+
+      # unit + component Vitest projects only — coverage-gated (85% branches / 90% functions,
+      # see vitest.config.ts). The storybook (Playwright browser) project is its own separate
+      # pass/fail check in validate.yml, not folded into these coverage numbers — see DECISIONS.md.
+      - name: Unit + component tests (coverage-gated)
+        run: pnpm run test:coverage
+
+      - name: Build
+        run: pnpm run build
