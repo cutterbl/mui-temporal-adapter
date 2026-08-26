@@ -304,9 +304,21 @@ MacroToken` type assertion in `formatByToken.ts` (TS 6 narrows it via the switch
       failure, to stop the next run from thinking the release was already done — see
       `DECISIONS.md`. Confirmed nothing published to npm yet (`0.0.1` placeholder only); the
       landed `chore(release): 1.0.0 [skip ci]` commit was left on `main` as-is
-- [ ] Fix on its own branch (`fix/release-npm-version`) — explicit `GITHUB_PATH` prepend +
-      diagnostic step. Merge and re-run `release.yml`; confirm the real `1.0.0` release + npm
-      publish + Pages deploy actually complete this time
+- [x] Fix on its own branch (`fix/release-npm-version`, PR #4) — explicit `GITHUB_PATH` prepend +
+      diagnostic step. Also caught and fixed two more real bugs before merging (user-directed):
+      the `release` job never ran `pnpm run build` (would have published an empty package — the
+      earlier failed attempt's tarball proved this: only 3 files, no `dist/`), and Husky's
+      `prepare` script running silently in every CI job/during `npm publish` itself — made the
+      CI-skip explicit rather than relying on Husky's undocumented-to-us internal detection
+- [x] **Milestone 9 complete, verified end-to-end for real:** merged PR #4 → `release.yml` ran
+      clean → `@cxing/mui-temporal-adapter@1.0.0` published to npm via OIDC (33 files, 158KB
+      unpacked — a real build, not the earlier empty one), tagged `v1.0.0`, GitHub Release
+      created with generated notes, `chore(release): 1.0.0 [skip ci]` commit on `main`.
+      `storybook-deploy.yml` fired automatically afterward and succeeded; confirmed the live site
+      at `https://cutterscrossing.com/mui-temporal-adapter/` returns HTTP 200. Four PRs total to
+      get here (#1 initial merge, #2 release.yml, #3 push-token fix, #4 npm-version + build +
+      husky fixes) — every failure mode hit along the way is fully written up in `DECISIONS.md`
+      for any future session standing up a similar semantic-release + protected-branch pipeline
 
 ## Milestone 10 — Documentation consistency pass
 
